@@ -6,6 +6,7 @@ import BudgetCapture from './BudgetCapture';
 import PreviousQuotes from './PreviousQuotes';
 
 const BudgetSection = ({BigButton, onClose}) => {
+    onClose(false);
     const [activeComponent, setActiveComponent] = useState('default');
     const [activeStep, setActiveStep] = useState(0);
     const [dataTable, setDataTable] = useState([]);
