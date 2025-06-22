@@ -36,12 +36,12 @@ import VpnKeyIcon from '@mui/icons-material/VpnKey';
 const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData,dataValue, setDataValue, activeStep, setActiveStep, isPastBudget, setIsPastBudget, onClose}) => {
     const [isPastBudgetModalOpen, setIsPastBudgetModalOpen] = useState(false);
     const [isConfirmBudgetedActivityModalOpen, setIsConfirmBudgetedActivityModalOpen] = useState(false);
-    const { handleCreate, datos: datoBudgetCreate} = useBudgetCreate();
+    const { handleCreate, datos: datoBudgetCreate, error: errorBudgetCreate} = useBudgetCreate();
     const { alertInfo, showAlert, closeAlert } = useSnackbarAlert();
-    const { handleUpdate, datos: datoBudgetUpdate } = useBudgetUpdate();
-    const { handleUpdate: handleUpdateStatus, datos: datoBudgetUpdateStatus } = useBudgetUpdateStatus();
-    const { handleDelete, datos: datoBudgetDelete } = useBudgetDelete();
-    const { handleUpdate: handleUpdateBudgetUpdateCreateNewActivities, datos: datoBudgetUpdateCreateNewActivities} = useBudgetUpdateCreateNewActivities();
+    const { handleUpdate, datos: datoBudgetUpdate , error: errorBudgetUpdate } = useBudgetUpdate();
+    const { handleUpdate: handleUpdateStatus, datos: datoBudgetUpdateStatus, error: errorBudgetUpdateStatus} = useBudgetUpdateStatus();
+    const { handleDelete, datos: datoBudgetDelete, error: errorBudgetDelete } = useBudgetDelete();
+    const { handleUpdate: handleUpdateBudgetUpdateCreateNewActivities, datos: datoBudgetUpdateCreateNewActivities, error: errorBudgetUpdateCreateNewActivities} = useBudgetUpdateCreateNewActivities();
     const { handleList: handleListBudgetPerMonthList, processedData: processedDataBudgetPerMonthList } = useBudgetPerMonthList();
     const { handleList: handleListActivitiesPastBudgetByBudgetList, processedData: processedDataActivitiesPastBudgetByBudgetList } = useActivitiesPastBudgetByBudgetList();
     const { handleList: handleListActivitiesPastBudgetByBudgetToPutList, processedData: processedDataActivitiesPastBudgetByBudgetToPutList } = useActivitiesPastBudgetByBudgetList();
@@ -58,52 +58,62 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     useEffect(() =>{
         if(datoBudgetCreate?.status){
             if(datoBudgetCreate.status === "success"){
-                showAlert("Registro exitoso.", "success");
+                showAlert("El presupuesto se registró exitosamente.", "success");
             }
-        } else {
-            showAlert("No se pudo registrar.", "error");
         }
     },[datoBudgetCreate])
+    
+    useEffect(() => { 
+        if (errorBudgetCreate) showAlert("Ocurrio un error al registrar el presupuesto", "error") 
+    }, [errorBudgetCreate])
 
     useEffect(() =>{
         if(datoBudgetUpdate?.status){
             if(datoBudgetUpdate.status === "success"){
                 showAlert("Actualización exitosa.", "success");
             } 
-        } else {
-            showAlert("No se pudo actualizar.", "error");
         }
     },[datoBudgetUpdate])
+
+    useEffect(() => { 
+        if (errorBudgetUpdate) showAlert("Ocurrio un error al actualizar", "error") 
+    }, [errorBudgetUpdate])
 
     useEffect(() =>{
         if(datoBudgetDelete?.status){
             if(datoBudgetDelete.status === "success"){
                 showAlert("Eliminación exitosa.", "success");
             } 
-        } else {
-            showAlert("No se pudo eliminar.", "error");
         }
     },[datoBudgetDelete])
+
+    useEffect(() => { 
+        if (errorBudgetDelete) showAlert("Ocurrio un error al eliminar", "error") 
+    }, [errorBudgetDelete])
 
     useEffect(() =>{
         if(datoBudgetUpdateStatus?.status){
             if(datoBudgetUpdateStatus.status === "success"){
-                showAlert("Actualización exitosa.", "success");
+                showAlert("Actualización de estado exitosamente.", "success");
             } 
-        } else {
-            showAlert("No se pudo actualizar.", "error");
         }
     },[datoBudgetUpdateStatus])
+
+    useEffect(() => { 
+        if (errorBudgetUpdateStatus) showAlert("Ocurrio un error al actualizar el estado", "error") 
+    }, [errorBudgetUpdateStatus])
 
     useEffect(() =>{
         if(datoBudgetUpdateCreateNewActivities?.status){
             if(datoBudgetUpdateCreateNewActivities.status === "success"){
-                showAlert("Actualización de nuevas actividades exitosa.", "success");
+               showAlert("Las nuevas actividades han sido presupuestadas exitosamente.", "success");
             } 
-        } else {
-            showAlert("No se pudo actualizar.", "error");
         }
     },[datoBudgetUpdateCreateNewActivities])
+
+    useEffect(() => { 
+        if (errorBudgetUpdateCreateNewActivities) showAlert("Ocurrio un error al presupuestar nuevas actividades", "error") 
+    }, [errorBudgetUpdateCreateNewActivities])
 
     useEffect(()=>{
         if(dataSecondary.id_mes){
@@ -240,9 +250,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         });
         // setActiveStep(0);
         // setActiveComponent('default');
-        setTimeout(() => {
-            onClose(true);
-        }, 2000);
         setIsPastBudget(false);
     };
 
@@ -261,9 +268,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         });
         // setActiveStep(0);
         // setActiveComponent('default');
-        setTimeout(() => {
-            onClose(true);
-        }, 2000);
         setIsPastBudget(false);
     };
 
@@ -281,6 +285,8 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 dataValue.id_finca,
                 dataValue.cns_detalle_finca
             );
+            setTimeout(() => {
+            }, 500);
         }
         if(budgetActivities.length !== 0 && isPastBudget){
             handleUpdateBudgetUpdateCreateNewActivities(budgetActivities.map(prev =>({ 
@@ -293,6 +299,8 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 dataValue.id_presupuesto,
                 status
             );
+            setTimeout(() => {
+            }, 500);
         }
 
         if(updatePastBudget.length !== 0){
@@ -304,15 +312,22 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 cantidad: prev.cantidad,
                 status: prev.status_actividad ? prev.status_actividad : 20
             })),status,dataValue.id_presupuesto);
+            setTimeout(() => {
+            }, 500);
         }
         
         if(dataIdsBudgetDelete.length !== 0){
             handleDelete(dataIdsBudgetDelete,dataValue.id_presupuesto,status);
+            setTimeout(() => {
+            }, 500);
         }
 
         if(budgetActivities.length === 0 && budgetActivities.length === 0 && updatePastBudget.length === 0 && dataIdsBudgetDelete.length === 0 && isPastBudget){
             handleUpdateStatus(status, dataValue.id_presupuesto);
+            setTimeout(() => {
+            }, 500);
         }
+        onClose(true);
     }
 
     const cancelValidation = () => {
