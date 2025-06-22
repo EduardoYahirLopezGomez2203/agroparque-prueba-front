@@ -108,7 +108,7 @@ const putEnviroment = (domain, ...moreEnviroments) => {
 const config = {
     local: putEnviroment(domainLocal),
 
-    development: putEnviroment(domainMalicius),
+    development: putEnviroment(domainDevelopment),
 
     production: putEnviroment(domainProduction),
 };

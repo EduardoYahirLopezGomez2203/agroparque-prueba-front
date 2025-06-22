@@ -16,7 +16,7 @@ import ViewComfyIcon from '@mui/icons-material/ViewComfy';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Box } from '@mui/material';
 import PastBudgetModal from '../../../components/modals/PastBudgetModal';
 import useBudgetCreate from '../../layer1/formbudgetsection/useBudgetCreate';
@@ -25,7 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import useBudgetUpdate from '../../layer1/formbudgetsection/useBudgetUpdate';
 import useBudgetDelete from '../../layer1/formbudgetsection/useBudgetDelete';
 import { Snackbar, Alert } from "@mui/material";
-import useMultipleSnackbarAlert from './useMultipleSnackbarAlert';
+import useSnackbarAlert from '../../layer1/formactivitymanager/useSnackbarAlert';
 import useBudgetPerMonthList from '../../layer1/formbudgetsection/useBudgetPerMonthList';
 import useActivitiesPastBudgetByBudgetList from '../../layer1/formactivities/useActivitiesPastBudgetByBudgetList';
 import useBudgetUpdateCreateNewActivities from '../../layer1/formbudgetsection/useBudgetUpdateCreateNewActivities';
@@ -37,7 +37,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     const [isPastBudgetModalOpen, setIsPastBudgetModalOpen] = useState(false);
     const [isConfirmBudgetedActivityModalOpen, setIsConfirmBudgetedActivityModalOpen] = useState(false);
     const { handleCreate, datos: datoBudgetCreate, error: errorBudgetCreate} = useBudgetCreate();
-    const { alertInfo, showAlert, closeAlert, handleExited } = useMultipleSnackbarAlert();
+    const { alertInfo, showAlert, closeAlert} = useSnackbarAlert();
     const { handleUpdate, datos: datoBudgetUpdate , error: errorBudgetUpdate } = useBudgetUpdate();
     const { handleUpdate: handleUpdateStatus, datos: datoBudgetUpdateStatus, error: errorBudgetUpdateStatus} = useBudgetUpdateStatus();
     const { handleDelete, datos: datoBudgetDelete, error: errorBudgetDelete } = useBudgetDelete();
@@ -54,11 +54,13 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         id_presupuesto: "",
     });
     const [rowToAutorizate, setRowToAutorizate] = useState([]);
+    const [accionesExitosas, setAccionesExitosas] = useState([]);
+    const accionesPendientes = useRef([]);
 
     useEffect(() =>{
         if(datoBudgetCreate?.status){
             if(datoBudgetCreate.status === "success"){
-                showAlert("El presupuesto se registró exitosamente.", "success");
+                setAccionesExitosas(prev => [...prev, "presupuesto registrado"]);
             }
         }
     },[datoBudgetCreate])
@@ -70,7 +72,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     useEffect(() =>{
         if(datoBudgetUpdate?.status){
             if(datoBudgetUpdate.status === "success"){
-                showAlert("Actualización exitosa.", "success");
+                setAccionesExitosas(prev => [...prev, "actualización de actividades"]);
             } 
         }
     },[datoBudgetUpdate])
@@ -82,7 +84,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     useEffect(() =>{
         if(datoBudgetDelete?.status){
             if(datoBudgetDelete.status === "success"){
-                showAlert("Eliminación exitosa.", "success");
+                setAccionesExitosas(prev => [...prev, "eliminación de actividades"]);
             } 
         }
     },[datoBudgetDelete])
@@ -94,7 +96,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     useEffect(() =>{
         if(datoBudgetUpdateStatus?.status){
             if(datoBudgetUpdateStatus.status === "success"){
-                showAlert("Actualización de estado exitosamente.", "success");
+                setAccionesExitosas(prev => [...prev, "actualización de estado"]);
             } 
         }
     },[datoBudgetUpdateStatus])
@@ -106,7 +108,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     useEffect(() =>{
         if(datoBudgetUpdateCreateNewActivities?.status){
             if(datoBudgetUpdateCreateNewActivities.status === "success"){
-               showAlert("Las nuevas actividades han sido presupuestadas exitosamente.", "success");
+               setAccionesExitosas(prev => [...prev, "nuevas actividades presupuestadas"]);
             } 
         }
     },[datoBudgetUpdateCreateNewActivities])
@@ -114,6 +116,23 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     useEffect(() => { 
         if (errorBudgetUpdateCreateNewActivities) showAlert("Ocurrio un error al presupuestar nuevas actividades", "error") 
     }, [errorBudgetUpdateCreateNewActivities])
+
+    useEffect(() => {
+        if (
+            accionesPendientes.current.length > 0 &&
+            accionesExitosas.length === accionesPendientes.current.length
+        ) {
+            showAlert(
+                `ACCIONES: ${accionesExitosas.join(", ")}.`,
+                "success"
+            );
+            accionesPendientes.current = [];
+            setAccionesExitosas([]);
+            setTimeout(() => {
+                onClose(true);
+            }, 4500);
+        }
+    }, [accionesExitosas]);
 
     useEffect(()=>{
         if(dataSecondary.id_mes){
@@ -272,6 +291,8 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     };
 
     const saveBudget = (status) => {
+        accionesPendientes.current = [];
+
         if(budgetActivities.length !== 0 && !isPastBudget){
             handleCreate(budgetActivities.map(prev =>({           
                 id_actividad: prev.id_actividad,
@@ -285,6 +306,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 dataValue.id_finca,
                 dataValue.cns_detalle_finca
             );
+            accionesPendientes.current.push("crear");
         }
         if(budgetActivities.length !== 0 && isPastBudget){
             handleUpdateBudgetUpdateCreateNewActivities(budgetActivities.map(prev =>({ 
@@ -297,6 +319,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 dataValue.id_presupuesto,
                 status
             );
+            accionesPendientes.current.push("presupuestar");
         }
 
         if(updatePastBudget.length !== 0){
@@ -308,18 +331,23 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 cantidad: prev.cantidad,
                 status: prev.status_actividad ? prev.status_actividad : 20
             })),status,dataValue.id_presupuesto);
+            accionesPendientes.current.push("actualizar");
         }
         
         if(dataIdsBudgetDelete.length !== 0){
             handleDelete(dataIdsBudgetDelete,dataValue.id_presupuesto,status);
+            accionesPendientes.current.push("eliminar");
         }
 
         if(budgetActivities.length === 0 && budgetActivities.length === 0 && updatePastBudget.length === 0 && dataIdsBudgetDelete.length === 0 && isPastBudget){
             handleUpdateStatus(status, dataValue.id_presupuesto);
+            accionesPendientes.current.push("actualizar estado");
         }
-        setTimeout(() => {
-            onClose(true);
-        }, 3500);
+
+        setAccionesExitosas([]);
+        // setTimeout(() => {
+        //     onClose(true);
+        // }, 3000);
     }
 
     const cancelValidation = () => {
@@ -489,9 +517,8 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             <ConfirmBudgetedActivityModal open={isConfirmBudgetedActivityModalOpen} setIsConfirmBudgetedActivityModalOpen = {setIsConfirmBudgetedActivityModalOpen} onAccept={onAcceptAutorization} onReject={onRejectAutorization} onViewFile={onViewFile}/>
             <Snackbar
                 open={alertInfo.open}
-                autoHideDuration={1800}
+                autoHideDuration={4500}
                 onClose={closeAlert}
-                onExited={handleExited} // <-- agrega esto
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
             >
                 <Alert onClose={closeAlert} severity={alertInfo.severity} sx={{ width: '100%' }}>
