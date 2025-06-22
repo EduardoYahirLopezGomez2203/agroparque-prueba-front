@@ -66,6 +66,7 @@ const putEnviroment = (domain, ...moreEnviroments) => {
         API_URL_budget_list: domain + '/v1/presupuesto/list',
         API_URL_activity_by_week_farm_area: domain + '/v1/actividad/presupuesto/semana/?/finca/?/area/?/list',
         API_URL_current_year_budget_list: domain + '/v1/presupuesto/semana/list',
+        API_URL_employee_by_company_list: domain + '/v1/trabajador/empresa/?',
 
         API_URL_activities_by_budget: domain + '/v1/presupuesto', //para obtener las actividades por presupuesto
 

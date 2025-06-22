@@ -12,7 +12,7 @@ import EventIcon from '@mui/icons-material/Event';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from "@mui/icons-material/Edit";
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonIcon from '@mui/icons-material/Person';
@@ -29,6 +29,7 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
 
     const { snackbarOptions, setSnackbarOptions, showMessage } = useSnackbarOption();
     const { handleCreate, datos, error } = useActivityCaptureCreate()
+    const didMount = useRef(null);
 
     const [modeUpdate, setModeUpdate] = useState(false)
 
@@ -52,23 +53,29 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
     const [activityCaptureData, setActivityCaptureData] = useState([]);
 
     useEffect(() => {
+        if (!didMount.current) {
+            didMount.current = true;
+            return; // No ejecutar la lógica la primera vez
+        }
         if (error) {
             showMessage("Ocurrio un error al crear el recurso", "error")
             return
         }
-        if (datos) {
+        if (datos?.data?.status) {
             showMessage("¡Registro creado con éxito!", "success")
             setTimeout(() => {
                 onClose(true)
             }, 650);
+        } else {
+            showMessage("Ocurrio un error al crear el recurso", "error")
         }
     }, [datos, error])
 
     useEffect(() => {
-        if (modeUpdate) 
+        if (modeUpdate)
             return
 
-        const isFindDuplicate = cleanData.find(element => 
+        const isFindDuplicate = cleanData.find(element =>
             `${element.id_actividad}${element.id_trabajador}` === `${dataValue.id_actividad}${dataValue.id_trabajador}`
         )
         if (isFindDuplicate) {
@@ -81,8 +88,8 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
     }, [dataValue.id_actividad, dataValue.id_trabajador])
 
     useEffect(() => {
-        if (dataValue.cantidad_avance < 0 || dataValue.cantidad_avance > 100) {
-            showMessage("Ingresa una cantidad de avance aceptada (0-100)", "warning")
+        if (dataValue.cantidad_avance < 0) {
+            showMessage("Ingresa una cantidad de avance aceptada", "warning")
             setDataValue((element) => ({
                 ...element,
                 cantidad_avance: ""
@@ -145,10 +152,10 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
 
     const steps = [
         {
-            component: 
-                <FormActivityCaptureFilter 
+            component:
+                <FormActivityCaptureFilter
                     dataValue={filterData}
-                    setDataValue={setFilterData} 
+                    setDataValue={setFilterData}
                 />,
             label: 'Filtros',
             buttons: [
@@ -169,15 +176,15 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
             ],
         },
         {
-            component: 
-                <Activity 
-                    dataValue={dataValue} 
-                    setDataValue={setDataValue} 
-                    filterData={filterData} 
-                    setActivityCaptureData={setActivityCaptureData} 
+            component:
+                <Activity
+                    dataValue={dataValue}
+                    setDataValue={setDataValue}
+                    filterData={filterData}
+                    setActivityCaptureData={setActivityCaptureData}
                     modeUpdate={modeUpdate}
                     setModeUpdate={setModeUpdate}
-                    activityCaptureData={activityCaptureData} 
+                    activityCaptureData={activityCaptureData}
                 />,
             label: 'Captura',
             buttons: [
@@ -256,7 +263,7 @@ const Activity = ({ dataValue, setDataValue, filterData, setActivityCaptureData,
 
     const handleDeleteRow = (row) => {
         // Recordemos que el id de la actividad es el id de la tabla por el modelo de negocio
-        setActivityCaptureData((prev) => 
+        setActivityCaptureData((prev) =>
             prev.filter(activityCaputreData => `${activityCaputreData.actividad.id}${activityCaputreData.trabajador.id}` !== row.id)
         )
     };
@@ -308,7 +315,7 @@ const Activity = ({ dataValue, setDataValue, filterData, setActivityCaptureData,
                             body: activityCaptureData.map((item) => ({
                                 ...item,
                                 // El id se forma de la actividad y trabajador.
-                                id: `${item.actividad.id}${item.trabajador.id}` ,
+                                id: `${item.actividad.id}${item.trabajador.id}`,
                                 nombre_empleado: item.trabajador.nombre,
                                 nombre_actividad: item.actividad.nombre,
                                 cantidad_avance: item.cantidad_avance
