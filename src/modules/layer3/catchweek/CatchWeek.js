@@ -149,7 +149,8 @@ const CatchWeek = ({ onClose }) => {
                     />
                 </Box>
             </Box>
-
+            
+            {/* Refactorizar pendiente */}
             <Snackbar
                 open={snackbarOptions.openSnackbar}
                 autoHideDuration={6000}

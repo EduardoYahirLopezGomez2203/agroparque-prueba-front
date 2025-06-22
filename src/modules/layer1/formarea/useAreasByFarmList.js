@@ -21,8 +21,6 @@ const useAreasByFarmList = () => {
                 descripcion: item.descripcion,
             }));
 
-            console.log("Datos transformados:", transformed);
-
             setProcessedData({
                     body: transformed
                 });

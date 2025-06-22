@@ -15,15 +15,24 @@ const useWeekLogList = () => {
 
     // Procesamiento de datos
     useEffect(() => {
+        
         if (datos && typeof datos === 'object' && datos.data && Array.isArray(datos.data)) { 
             const transformed = datos.data.map(item => ({
-                ...item,  
-                status: item.status.id,          
+                ...item,
+                status: item.status.id,
             }));
     
             setProcessedData({
                 body: transformed
             });
+
+        } else if(datos && typeof datos === 'object' && datos.data) {
+            const transformed = datos.data
+    
+            setProcessedData({
+                body: transformed
+            });
+
         } else {
             setProcessedData({ body: [] });
         }

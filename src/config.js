@@ -28,6 +28,7 @@ const putEnviroment = (domain, ...moreEnviroments) => {
         API_URL_details_activity_create: domain + '/v1/finca/?/actividad/?/create',
         API_URL_budget_create: domain + '/v1/presupuesto/create/detalle?',
         API_URL_update_budget_create_new_activity: domain + '/v1/presupuesto',
+        API_URL_capture_activity_create: domain + '/v1/captura-actividad/semana/?/finca/?/area/?/create',
 
         API_URL_filter_management_activity: domain + '/v1/finca/?/area/?',
         API_URL_find_area_by_farm: domain + '/v1/area/list/finca/?',
@@ -50,16 +51,20 @@ const putEnviroment = (domain, ...moreEnviroments) => {
         API_URL_advance_unit_list: domain + '/v1/unidad-avance/list',
         API_URL_activity_list: domain + '/v1/actividad/list',
         API_URL_type_activity_list: domain + '/v1/tipo-actividad/list',
-        API_URL_details_activity_list: local + '/v1/actividad/?/detalle/list',
+        API_URL_details_activity_list: domain + '/v1/actividad/?/detalle/list',
         API_URL_catch_week_list: domain + '/v1/semana/list',
         API_URL_farm_detail_list: domain + '/v1/finca/?/detalle/list',
         API_URL_farm_list_by_company: domain + '/v1/finca/list/empresa',
         API_URL_area_list_by_farm: domain + '/v1/area/list/finca',
-        API_URL_activity_list_by_finca_area: domain + '/v1/finca',
+        API_URL_activity_list_by_finca_area: domain + '/v1/finca/?/actividad/area/?/list',
         API_URL_catch_week_current_year_list: domain + '/v1/semana/current-year/list',
         API_URL_past_budget_by_month_area_finca: domain + '/v1/presupuesto/semana/list?',
-
+        API_URL_company_by_week_of_budget_list: domain + '/v1/empresa/presupuesto/semana/?',
+        API_URL_employee_by_farm_list: domain + '/v1/trabajador/finca/?',
+        API_URL_budget_detail_by_week_farm_area: domain + '/v1/presupuesto/semana/?/finca/?/area/?/list',
         API_URL_budget_list: domain + '/v1/presupuesto/list',
+        API_URL_activity_by_week_farm_area: domain + '/v1/actividad/presupuesto/semana/?/finca/?/area/?/list',
+        API_URL_current_year_budget_list: domain + '/v1/presupuesto/semana/list',
 
         API_URL_activities_by_budget: domain + '/v1/presupuesto', //para obtener las actividades por presupuesto
 

@@ -6,7 +6,6 @@ import BudgetCapture from './BudgetCapture';
 import PreviousQuotes from './PreviousQuotes';
 
 const BudgetSection = ({BigButton, onClose}) => {
-    onClose(false);
     const [activeComponent, setActiveComponent] = useState('default');
     const [activeStep, setActiveStep] = useState(0);
     const [dataTable, setDataTable] = useState([]);
@@ -57,7 +56,7 @@ const BudgetSection = ({BigButton, onClose}) => {
         </Stack>}
 
         {activeComponent === 'captureBudget' && (
-                <BudgetCapture setActiveComponent={setActiveComponent} dataTable={dataTable} setDataTable={setDataTable} initialData={initialData} dataValue={dataValue} setDataValue={setDataValue} activeStep={activeStep} setActiveStep={setActiveStep} isPastBudget={isPastBudget} onClose={onClose}/> // Renderiza el componente de captura de presupuesto
+                <BudgetCapture setActiveComponent={setActiveComponent} dataTable={dataTable} setDataTable={setDataTable} initialData={initialData} dataValue={dataValue} setDataValue={setDataValue} activeStep={activeStep} setActiveStep={setActiveStep} isPastBudget={isPastBudget} setIsPastBudget={setIsPastBudget} onClose={onClose}/> // Renderiza el componente de captura de presupuesto
         )}
 
         {activeComponent === 'previousBudgets' && (

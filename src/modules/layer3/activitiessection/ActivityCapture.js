@@ -11,42 +11,97 @@ import CheckIcon from '@mui/icons-material/Check';
 import EventIcon from '@mui/icons-material/Event';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
-import { useState} from 'react';
-import { useEffect, useRef } from 'react';
+import EditIcon from "@mui/icons-material/Edit";
+import { useEffect, useState } from 'react';
 import { Box } from '@mui/material';
+import DeleteIcon from "@mui/icons-material/Delete";
 import PersonIcon from '@mui/icons-material/Person';
 import ViewComfyIcon from '@mui/icons-material/ViewComfy';
 import StraightenIcon from '@mui/icons-material/Straighten';
-import useWeekLogList from '../../layer1/formweeklog/useWeekLogList';
+import SnackbarComponent from '../../../components/snackbar/SnackbarComponent';
+import useSnackbarOption from '../../../hooks/useSnackbarOption';
+import useActivityCaptureCreate from '../../layer1/formactivitiessection/useActivityCaptureCreate';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
-const ActivityCapture = ({setActiveComponent}) => {
+const ActivityCapture = ({ setActiveComponent, onClose }) => {
+
     const [activeStep, setActiveStep] = useState(0);
-    const [firstIsValid, setFirstIsValid] = useState(true);
 
-    const { handleList: handleListWeek, processedData: processedDataWeek } = useWeekLogList();
+    const { snackbarOptions, setSnackbarOptions, showMessage } = useSnackbarOption();
+    const { handleCreate, datos, error } = useActivityCaptureCreate()
 
-    useEffect(() => {
-        handleListWeek();
-    }, [handleListWeek]);
+    const [modeUpdate, setModeUpdate] = useState(false)
 
-    const initialData = {
+    const filterInitialData = {
         id_semana: null,
         id_empresa: null,
         id_finca: null,
         id_area: null,
+    }
 
-        id_empleado: null,
-        id_actividad: "",
+    const initialData = {
+        id_trabajador: null,
+        id_actividad: null,
         cantidad_avance: "",
         fecha: null
     };
 
     const [dataValue, setDataValue] = useState(initialData);
-
+    const [filterData, setFilterData] = useState(filterInitialData)
+    const [cleanData, setCleanData] = useState([]) // Dejamos la data lista para mandarla al back
     const [activityCaptureData, setActivityCaptureData] = useState([]);
-    console.log("ActivityCaptureData: ", activityCaptureData);
 
-    const handleNext = () => {     
+    useEffect(() => {
+        if (error) {
+            showMessage("Ocurrio un error al crear el recurso", "error")
+            return
+        }
+        if (datos) {
+            showMessage("¡Registro creado con éxito!", "success")
+            setTimeout(() => {
+                onClose(true)
+            }, 650);
+        }
+    }, [datos, error])
+
+    useEffect(() => {
+        if (modeUpdate) 
+            return
+
+        const isFindDuplicate = cleanData.find(element => 
+            `${element.id_actividad}${element.id_trabajador}` === `${dataValue.id_actividad}${dataValue.id_trabajador}`
+        )
+        if (isFindDuplicate) {
+            showMessage("La actividad ya fue asignada al trabajador", "warning")
+            setDataValue((element) => ({
+                ...element,
+                id_actividad: null
+            }))
+        }
+    }, [dataValue.id_actividad, dataValue.id_trabajador])
+
+    useEffect(() => {
+        if (dataValue.cantidad_avance < 0 || dataValue.cantidad_avance > 100) {
+            showMessage("Ingresa una cantidad de avance aceptada (0-100)", "warning")
+            setDataValue((element) => ({
+                ...element,
+                cantidad_avance: ""
+            }))
+        }
+    }, [dataValue.cantidad_avance])
+
+    useEffect(() => {
+        const data = activityCaptureData.map(data => ({
+            id_trabajador: data.trabajador.id,
+            id_actividad: data.actividad.id,
+            avance: `${data.cantidad_avance}%`,
+            fecha: data.fecha
+        }))
+
+        setCleanData(data)
+    }, [activityCaptureData])
+
+    const handleNext = () => {
         setActiveStep((prev) => prev + 1);
     };
 
@@ -60,57 +115,70 @@ const ActivityCapture = ({setActiveComponent}) => {
     };
 
     const firstValidation = () => {
-       if (!firstIsValid) {
-            return; // Logica de validación para el primer paso
-       }
-       handleNext();
-    };
-
-    const secondValidation = () => {
-        if (!firstIsValid) {
-         return; // Logica de validación para el segundo paso
+        if (Object.values(filterData).some(value => value === null)) {
+            showMessage("Favor de llenar todos los filtros", "warning")
+            return;
         }
         handleNext();
     };
 
-     const finallyValidation = () => {
-        return false; //Logica de validación para el paso Finalizar
-     };
-    
+    const secondValidation = () => {
+        if (activityCaptureData.length === 0) {
+            showMessage("Añade datos para poder pasar al siguiente paso", "warning")
+            return;
+        }
+        handleNext();
+    };
+
+    const finallyValidation = () => {
+        handleCreate(cleanData, filterData.id_semana, filterData.id_finca, filterData.id_area)
+    };
+
     const saveValidation = () => {
-        return false;   //Logica de validacion para el paso Guardar
+        handleCreate(cleanData, filterData.id_semana, filterData.id_finca, filterData.id_area)
     };
 
     const cancelValidation = () => {
         setActiveStep(0);
         setActiveComponent('default'); //Logica de validacion para el paso Cancelar
-        return false;
     };
-
 
     const steps = [
         {
-            component: <FormActivityCaptureFilter dataValue={dataValue} setDataValue={setDataValue} processedDataWeek={processedDataWeek} />,
+            component: 
+                <FormActivityCaptureFilter 
+                    dataValue={filterData}
+                    setDataValue={setFilterData} 
+                />,
             label: 'Filtros',
             buttons: [
                 <ButtonComponent
                     icon={<ArrowBackIcon />}
                     styleButton="outlined"
                     color="brightRed"
-                    onClick={handleFirstBack} 
+                    onClick={handleFirstBack}
                     label='Anterior'
-                />, 
+                />,
                 <ButtonComponent
-                rightIcon={<ArrowForwardIcon />}
-                styleButton="contained"
-                color="strongGreen"
-                onClick={firstValidation} 
-                label='Siguiente'
+                    rightIcon={<ArrowForwardIcon />}
+                    styleButton="contained"
+                    color="strongGreen"
+                    onClick={firstValidation}
+                    label='Siguiente'
                 />,
             ],
         },
         {
-            component: <Activity dataValue={dataValue} setDataValue={setDataValue} processedDataWeek={processedDataWeek} setActivityCaptureData={setActivityCaptureData} activityCaptureData={activityCaptureData} />,
+            component: 
+                <Activity 
+                    dataValue={dataValue} 
+                    setDataValue={setDataValue} 
+                    filterData={filterData} 
+                    setActivityCaptureData={setActivityCaptureData} 
+                    modeUpdate={modeUpdate}
+                    setModeUpdate={setModeUpdate}
+                    activityCaptureData={activityCaptureData} 
+                />,
             label: 'Captura',
             buttons: [
                 <ButtonComponent
@@ -119,47 +187,47 @@ const ActivityCapture = ({setActiveComponent}) => {
                     color="brightRed"
                     onClick={handleBack}
                     label='Anterior'
-                />, 
+                />,
                 <ButtonComponent
-                rightIcon={<ArrowForwardIcon />}
-                styleButton="contained"
-                color="strongGreen"
-                onClick={secondValidation} 
-                label='Siguiente'
+                    rightIcon={<ArrowForwardIcon />}
+                    styleButton="contained"
+                    color="strongGreen"
+                    onClick={secondValidation}
+                    label='Siguiente'
                 />
             ],
         },
         {
-            component: <LabelConfirmClosure title = {"¿Está seguro de cerrar la actividad?"} warning = {"No podrá volver a modificarlo."}/>,
+            component: <LabelConfirmClosure title={"¿Está seguro de cerrar la actividad?"} warning={"No podrá volver a modificarlo."} />,
             label: 'Cierre',
             buttons: [
                 <ButtonComponent
                     icon={<ArrowBackIcon />}
                     styleButton="outlined"
                     color="brightRed"
-                    onClick={handleBack} 
+                    onClick={handleBack}
                     label='Anterior'
-                />, 
+                />,
                 <ButtonComponent
-                icon={<CheckIcon />}
-                styleButton="contained"
-                color="vividBlue"
-                onClick={finallyValidation} 
-                label='Finalizar'
+                    icon={<CheckIcon />}
+                    styleButton="contained"
+                    color="vividBlue"
+                    onClick={finallyValidation}
+                    label='Finalizar'
                 />,
                 <ButtonComponent
                     icon={<SaveIcon />}
                     styleButton="outlined"
                     color="strongGreen"
-                    onClick={saveValidation} 
+                    onClick={saveValidation}
                     label='Guardar'
-                />, 
+                />,
                 <ButtonComponent
-                icon={<CloseIcon />}
-                styleButton="outlined"
-                color="brightRed"
-                onClick={cancelValidation}
-                label='Cancelar'
+                    icon={<CloseIcon />}
+                    styleButton="outlined"
+                    color="brightRed"
+                    onClick={cancelValidation}
+                    label='Cancelar'
                 />
             ],
         },
@@ -167,56 +235,31 @@ const ActivityCapture = ({setActiveComponent}) => {
 
     return (
         <>
-            <StepperComponent elements={steps} activeStep={activeStep}/>
+            <StepperComponent elements={steps} activeStep={activeStep} />
+            <SnackbarComponent snackbarOptions={snackbarOptions} setSnackbarOptions={setSnackbarOptions} />
         </>
     );
 }
 
+const Activity = ({ dataValue, setDataValue, filterData, setActivityCaptureData, activityCaptureData, modeUpdate, setModeUpdate }) => {
 
-const Activity =({dataValue, setDataValue, processedDataWeek, setActivityCaptureData, activityCaptureData}) => {
-    const isFirstRender = useRef(true);
+    const handleEditRow = (row) => {
+        setModeUpdate(true)
+        setDataValue(({
+            //id: row.actividad.id, // Agregando el id como pivote para verificar
+            id_trabajador: row.trabajador.id,
+            id_actividad: row.actividad.id,
+            cantidad_avance: row.cantidad_avance,
+            fecha: row.fecha
+        }))
+    };
 
-    const [watchWarning, setWatchWarning] = useState(false);
-    const [selectedId, setSelectedId] = useState(null);
-
-    const [updateData, setUpdateData] = useState({});
-    const [isUpdate, setIsUpdate] = useState(false);
-    const [update, setUpdate] = useState(false);
-    const [idDelete, setIdDelete] = useState(0);
-
-    const [dataTable, setDataTable] = useState([]);
-
-    useEffect(() => {
-        if (idDelete !== 0) {
-            dataTable.forEach((item) => { 
-                if (item.id === idDelete) {
-                    setDataTable((prevData) => prevData.filter((data) => data.id !== idDelete));
-                }
-            });
-            setIdDelete(0); // Reinicia el idDelete después de eliminar
-        }
-    }, [idDelete]);
-
-    useEffect(() => {
-        if (isFirstRender.current) {
-            // Evita que se ejecute en el primer render
-            isFirstRender.current = false;
-            return;
-        }
-
-        if (Object.keys(updateData).length > 0) {
-            console.log("Se obtuvieron los datos a editar de la tabla: ", updateData);
-            setIsUpdate(true);
-        }
-    }, [updateData]);
-
-    useEffect(() => {
-        if (Object.keys(updateData).length > 0 && update) {
-            console.log("Se obtuvieron los datos a editar del formulario: ", updateData);
-            setUpdate(false);
-            setIsUpdate(false);
-        }
-    }, [update]);
+    const handleDeleteRow = (row) => {
+        // Recordemos que el id de la actividad es el id de la tabla por el modelo de negocio
+        setActivityCaptureData((prev) => 
+            prev.filter(activityCaputreData => `${activityCaputreData.actividad.id}${activityCaputreData.trabajador.id}` !== row.id)
+        )
+    };
 
     const tableHeaders = [
         {
@@ -233,6 +276,11 @@ const Activity =({dataValue, setDataValue, processedDataWeek, setActivityCapture
             id: 'cantidad_avance',
             text: 'Cantidad de Avance',
             icon: <StraightenIcon fontSize="large" color="slateBlue" />
+        },
+        {
+            id: 'fecha',
+            text: 'Fecha',
+            icon: <CalendarMonthIcon fontSize="large" color="slateBlue" />
         }
     ];
 
@@ -241,22 +289,43 @@ const Activity =({dataValue, setDataValue, processedDataWeek, setActivityCapture
             <BasicAdminContent
                 showAccordion={false}
                 formComponent={
-                    <FormEmployeeDeployment dataValue={dataValue} setDataValue={setDataValue} processedDataWeek={processedDataWeek} setActivityCaptureData={setActivityCaptureData} />  
+                    <FormEmployeeDeployment
+                        dataValue={dataValue}
+                        setDataValue={setDataValue}
+                        modeUpdate={modeUpdate}
+                        setModeUpdate={setModeUpdate}
+                        filterData={filterData}
+                        setActivityCaptureData={setActivityCaptureData}
+                    />
                 }
                 queryTitle="Consulta de Semana"
                 queryIcon={<PersonIcon fontSize="large" color="slateBlue" />}
                 formIcon={<EventIcon fontSize='large' color='slateBlue' />}
                 tableComponent={
-                    <BasicTableComponent 
+                    <BasicTableComponent
                         information={{
                             header: tableHeaders,
                             body: activityCaptureData.map((item) => ({
-                                id: item.id,
-                                nombre_empleado: item.nombre_empleado,
-                                nombre_actividad: item.nombre_actividad,
-                                cantidad_avance: item.cantidad_avance,
+                                ...item,
+                                // El id se forma de la actividad y trabajador.
+                                id: `${item.actividad.id}${item.trabajador.id}` ,
+                                nombre_empleado: item.trabajador.nombre,
+                                nombre_actividad: item.actividad.nombre,
+                                cantidad_avance: item.cantidad_avance
                             })),
                         }}
+                        items={[
+                            {
+                                icon: <EditIcon color="slateBlue" />,
+                                text: "Editar",
+                                onClick: handleEditRow
+                            },
+                            {
+                                icon: <DeleteIcon color="slateBlue" />,
+                                text: "Eliminar",
+                                onClick: handleDeleteRow
+                            }
+                        ]}
                     />
                 }
             />

@@ -1,15 +1,14 @@
 import { Typography, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EventIcon from '@mui/icons-material/Event';
-import { useState} from 'react';
+import { useState } from 'react';
 import ActivityCapture from './ActivityCapture';
 import PreviousWeeks from './PreviousWeeks';
 
-
-const ActivitiesSection = ({BigButton}) => {
+const ActivitiesSection = ({ BigButton, onClose }) => {
     const [activeComponent, setActiveComponent] = useState('default');
 
-    return ( <>
+    return (<>
         {activeComponent === 'default' && <Stack direction="column" sx={{ justifyContent: "center", alignItems: "center" }}>
             <Typography variant="fontFamily" sx={{ fontWeight: 550, fontSize: '1.0rem', color: '#495361', paddingTop: 2 }}>
                 Seleccione una opción
@@ -29,11 +28,11 @@ const ActivitiesSection = ({BigButton}) => {
         </Stack>}
 
         {activeComponent === 'activityCapture' && (
-            <ActivityCapture setActiveComponent={setActiveComponent}/>
+            <ActivityCapture setActiveComponent={setActiveComponent} onClose={onClose}/>
         )}
 
         {activeComponent === 'previousWeeks' && (
-            <PreviousWeeks setActiveComponent={setActiveComponent}/>
+            <PreviousWeeks setActiveComponent={setActiveComponent} />
         )}
     </>
     );

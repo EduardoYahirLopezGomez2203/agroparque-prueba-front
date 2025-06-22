@@ -9,124 +9,157 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SearchComponent from "../../../components/search/SearchComponent";
 import { SectionForm } from "../../layer1/admin/Form";
 import DinamicTableComponent from "../../../components/table/DinamicTableComponent";
-import EditIcon from "@mui/icons-material/Edit";
 import Visibility from '@mui/icons-material/Visibility';
-import VpnKey from '@mui/icons-material/VpnKey';
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useBudgetCurrentYearList from "../../layer1/formbudgetsection/useBudgetCurrentYearList";
 
+const PreviousWeeks = ({ setActiveComponent }) => {
 
+    const { handleList, processedData, error } = useBudgetCurrentYearList()
 
-const PreviousWeeks = ({setActiveComponent}) => {
+    useEffect(() => {
+        handleList()
+    }, [])
 
-    const [searchValue, setSearchValue] = useState('');
+    const [information, setInformation] = useState([]);
 
-  const Back = () => {
-    setActiveComponent('default'); // Regresa al componente inicial
-  };
+    useEffect(() => {
+        if (error) {
+            return
+        }
 
-  const information = {
-    header: [
-      { id: "empresa", 
-        text: "Empresa", 
-        icon: <BusinessOutlinedIcon fontSize="large" color="slateBlue"/>
-      },
-      { id: "finca",
-        text: "Finca",
-        icon: <GrassOutlinedIcon fontSize="large" color="slateBlue"/>
-      },
-      { id: "area",
-        text: "Área",
-        icon: <ViewModuleIcon fontSize="large" color="slateBlue"/>
-      },
-      { id: "semana",
-        text: "Semana",
-        icon: <EventIcon fontSize="large" color="slateBlue"/>
-      },
-      { id: "total_presupuesto",
-        text: "Total Presupuesto",
-        icon: <AttachMoneyIcon fontSize='large'  color='slateBlue' />
-      },
-      { id: "status",
-        text: "Status",
-        icon: <CheckCircleIcon fontSize="large" color="slateBlue"/>
-      },
-    ],
-    body: [
-      {
-        id: 1,
-        empresa: "Empresa A",
-        finca: "Finca A",
-        area: "Área A",
-        semana: "Semana 1",
-        total_presupuesto: "$1000",
-        status: "Aprobado",
-      },
-      {
-        id: 2,
-        empresa: "Empresa B",
-        finca: "Finca B",
-        area: "Área B",
-        semana: "Semana 2",
-        total_presupuesto: "$2000",
-        status: "Pendiente",
-      },
-      {
-        id: 3,
-        empresa: "Empresa C",
-        finca: "Finca C",
-        area: "Área C",
-        semana: "Semana 3",
-        total_presupuesto: "$3000",
-        status: "Rechazado",
-      },
-      {
-        id: 4,
-        empresa: "Empresa D",
-        finca: "Finca D",
-        area: "Área D",
-        semana: "Semana 4",
-        total_presupuesto: "$4000",
-        status: "Aprobado",
-      },
-    ],
-  };
+        setInformation(processedData.body.map(element => ({
+            ...element,
+            area: element.detalle_finca.area.nombre,
+            empresa: element.detalle_finca.finca.empresa.nombre,
+            finca: element.detalle_finca.finca.nombre,
+            presupuesto: element.presupuesto,
+            semana: `Semana ${element.semana.numero_semana}`,
+            status: element.status.nombre
+        })))
+        
+    }, [processedData, error])
 
-  const menuOptions =[
-     {text: "Ver", icon: <Visibility />, onClick: () => {} },
-     { text: "Editar", icon: <EditIcon />, onClick: () => {} },
-     { text: "Modificar Autorizado", icon: <VpnKey />, onClick: () => {} }
-  ];
-
-
-    const handleSearch = () => {
-        console.log('Buscando:', searchValue);
+    const Back = () => {
+        setActiveComponent('default'); // Regresa al componente inicial
     };
 
+    const menuOptions = [
+        { text: "Ver", icon: <Visibility />, onClick: () => { } }
+    ];
 
-  return (
-    <>
-    <SectionForm icon = {<AttachMoneyIcon fontSize='large'  color='slateBlue' />} title={"Consulta de Semanas Anterirores"}/>
-    <div style={{ display: 'flex', justifyContent: 'end', marginBottom: "20px", marginTop: '20px' }}>
-      <SearchComponent
-        value={searchValue}
-        onChange={setSearchValue}
-        onSearch={handleSearch}
-        width="50%"
-      />
-    </div>
-    <DinamicTableComponent
-      information={information} 
-      menuOptions={menuOptions}
-    />
-    <ButtonComponent
-      icon={<ArrowBackIcon />}
-      label='Regresar'
-      color="error"
-      styleButton="contained"
-      onClick= {Back}
-    />
-    </>
-  );
+    const [searchData, setSearchData] = useState('');
+    //const [searchType] = React.useState(defaultSearchType);
+    const [searchInformation, setSearchInformation] = useState(information)
+
+    useEffect(() => {
+        setSearchInformation(information)
+    }, [information])
+
+    const handleChange = (value) => {
+        setSearchData(value)
+        handleSearch(value)
+    }
+
+    // Busqueda temporal en frontend
+    const handleSearch = (searchTerm) => {
+        if (searchTerm === "") {
+            setSearchInformation(information)
+            return
+        }
+
+        const normalizeString = (str) => {
+            return str
+                .normalize("NFD") // Normalizar caracteres acentuados
+                .replace(/[\u0300-\u036f]/g, "") // Eliminar diacríticos
+                .toLowerCase();
+        };
+
+        const searchTerms = normalizeString(searchTerm)
+            .split(/\s+/) // Dividir por espacios
+            .filter(term => term.length > 0); // Eliminar términos vacíos
+
+        if (searchTerms.length === 0) {
+            setSearchInformation(null);
+            return;
+        }
+
+        const filteredBody = information.filter(row => {
+            const rowValues = Object.values(row)
+                .map(value =>
+                    typeof value === 'string'
+                        ? normalizeString(value)
+                        : String(value).toLowerCase()
+                )
+                .join(' '); // Concatenar todos los valores del registro
+
+            return searchTerms.every(term =>
+                rowValues.includes(term)
+            );
+        });
+
+        setSearchInformation(filteredBody);
+    };
+
+    return (
+        <>
+            <SectionForm icon={<AttachMoneyIcon fontSize='large' color='slateBlue' />} title={"Consulta de Semanas Anterirores"} />
+            <div style={{ display: 'flex', justifyContent: 'end', marginBottom: "20px", marginTop: '20px' }}>
+                <SearchComponent
+                    value={searchData}
+                    onChange={handleChange}
+                    width="50%"
+                />
+            </div>
+            <DinamicTableComponent
+                information={{
+                    header: tableHeaders,
+                    body: searchInformation
+                }}
+                menuOptions={menuOptions}
+            />
+            <ButtonComponent
+                icon={<ArrowBackIcon />}
+                label='Regresar'
+                color="error"
+                styleButton="contained"
+                onClick={Back}
+            />
+        </>
+    );
 }
+
+const tableHeaders = [
+    {
+        id: "empresa",
+        text: "Empresa",
+        icon: <BusinessOutlinedIcon fontSize="large" color="slateBlue" />
+    },
+    {
+        id: "finca",
+        text: "Finca",
+        icon: <GrassOutlinedIcon fontSize="large" color="slateBlue" />
+    },
+    {
+        id: "area",
+        text: "Área",
+        icon: <ViewModuleIcon fontSize="large" color="slateBlue" />
+    },
+    {
+        id: "semana",
+        text: "Semana",
+        icon: <EventIcon fontSize="large" color="slateBlue" />
+    },
+    {
+        id: "presupuesto",
+        text: "Total Presupuesto",
+        icon: <AttachMoneyIcon fontSize='large' color='slateBlue' />
+    },
+    {
+        id: "status",
+        text: "Status",
+        icon: <CheckCircleIcon fontSize="large" color="slateBlue" />
+    }
+]
 
 export default PreviousWeeks;

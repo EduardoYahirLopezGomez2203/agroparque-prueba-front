@@ -33,7 +33,7 @@ import useBudgetUpdateStatus from '../../layer1/formbudgetsection/useBudgetUpdat
 import ConfirmBudgetedActivityModal from '../../../components/modals/ConfirmBudgetedActivityModal';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 
-const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData,dataValue, setDataValue, activeStep, setActiveStep, isPastBudget, onClose}) => {
+const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData,dataValue, setDataValue, activeStep, setActiveStep, isPastBudget, setIsPastBudget, onClose}) => {
     const [isPastBudgetModalOpen, setIsPastBudgetModalOpen] = useState(false);
     const [isConfirmBudgetedActivityModalOpen, setIsConfirmBudgetedActivityModalOpen] = useState(false);
     const { handleCreate, datos: datoBudgetCreate} = useBudgetCreate();
@@ -229,6 +229,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         });
         // setActiveStep(0);
         // setActiveComponent('default');
+        setTimeout(() => {
+            onClose(true);
+        }, 2000);
     };
 
     const saveValidation = () => {
@@ -246,6 +249,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         });
         // setActiveStep(0);
         // setActiveComponent('default');
+        setTimeout(() => {
+            onClose(true);
+        }, 2000);
     };
 
     const saveBudget = (status) => {
@@ -294,9 +300,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         if(budgetActivities.length === 0 && budgetActivities.length === 0 && updatePastBudget.length === 0 && dataIdsBudgetDelete.length === 0 && isPastBudget){
             handleUpdateStatus(status, dataValue.id_presupuesto);
         }
-        setTimeout(() => {
-            onClose(true);
-        }, 2000);
     }
 
     const cancelValidation = () => {

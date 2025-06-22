@@ -2,14 +2,14 @@ import { useEffect, useState, useCallback } from "react";
 import useServiceAuth from "../../../hooks/useServiceAuth";
 import config from "../../../config";
 
-const useCompanyList = () => {
+const useFilterCompanyByWeekOfBudget = () => {
     const { obtenerDatos, datos, error, cargando } = useServiceAuth();
     const [processedData, setProcessedData] = useState({ header: [], body: [] });
 
     const handleList = useCallback((key) => {
-        const url = key 
-            ? `${config[process.env.REACT_APP_ENV].API_URL_company_list}/${key}` // Búsqueda por ID
-            : config[process.env.REACT_APP_ENV].API_URL_company_list; // Lista completa
+        const url = config[process.env.REACT_APP_ENV]
+            .API_URL_company_by_week_of_budget_list
+            .replace("?", key)
         obtenerDatos('GET', url, {}, {"findby": 0});
     }, [obtenerDatos]);
 
@@ -37,4 +37,4 @@ const useCompanyList = () => {
     return { handleList, processedData, error, cargando };
 };
 
-export default useCompanyList;
+export default useFilterCompanyByWeekOfBudget;

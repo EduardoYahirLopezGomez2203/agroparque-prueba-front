@@ -1,74 +1,78 @@
-import {BasicFilterForm} from "../admin/BasicForm";
+import { BasicFilterForm } from "../admin/BasicForm";
 import { SectionForm, SelectForm } from "../admin/Form";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
-import useCompanyList from "../formcompany/useCompanyList";
 import useFarmsByCompanyList from "../formfarm/useFarmsByCompanyList";
 import useAreasByFarmList from "../formarea/useAreasByFarmList";
-import useWeekCurrenYearLogList from '../../layer1/formweeklog/useWeekCurrenYearLogList';
+import useFilterCompanyByWeekOfBudget from "./useFilterCompanyByWeekOfBudget";
+import useWeekCurrenYearLogList from "../formweeklog/useWeekCurrenYearLogList";
+import useSnackbarOption from "../../../hooks/useSnackbarOption";
+import SnackbarComponent from "../../../components/snackbar/SnackbarComponent";
 
+const FormActivityCaptureFilter = ({ dataValue, setDataValue }) => {
 
-const FormActivityCaptureFilter = ({dataValue, setDataValue, processedDataWeek}) => {
+    const { handleList: handleListFarmsByComany, processedData: processedDataFarmsByCompany, error: errorFarm } = useFarmsByCompanyList();
+    const { handleList: handleListAreasByFarm, processedData: processedDataAreasByFarm, error: errorArea } = useAreasByFarmList();
+    const { handleList: handleListCompanyByWeek, processedData: processedDataCompanyByWeek, error: errorCompany } = useFilterCompanyByWeekOfBudget();
+    const { handleList: handleListWeek, processedData: processedDataWeek, error: errorWeek } = useWeekCurrenYearLogList();
 
-    const { handleList: handleListCompany, processedData: processedDataCompany } = useCompanyList();
-    const { handleList: handleListFarmsByComany, processedData: processedDataFarmsByCompany } = useFarmsByCompanyList();
-    const { handleList: handleListAreasByFarm, processedData: processedDataAreasByFarm } = useAreasByFarmList();
+    const { snackbarOptions, setSnackbarOptions, showMessage } = useSnackbarOption();
+
+    useEffect(() => { handleListWeek() }, []);
+
+    useEffect(() => { if (errorCompany) showMessage("Ocurrio un error al obtener las empresas", "error") }, [errorCompany])
     
-    useEffect(() => {
-        handleListCompany();
-    }, [handleListCompany]);
+    useEffect(() => { if (errorFarm) showMessage("Ocurrio un error al obtener las fincas", "error") }, [errorFarm])
+
+    useEffect(() => { if (errorArea) showMessage("Ocurrio un error al obtener las areas", "error") }, [errorArea])
+    
+    useEffect(() => { if (errorWeek) showMessage("Ocurrio un error al obtener las semanas", "error") }, [errorWeek])
 
     useEffect(() => {
-        handleListFarmsByComany(dataValue.id_empresa);
-    },[dataValue.id_empresa, handleListFarmsByComany]);
+        if (dataValue.id_semana)
+            handleListCompanyByWeek(dataValue.id_semana);
+    }, [dataValue.id_semana]);
 
     useEffect(() => {
-        handleListAreasByFarm(dataValue.id_finca);
-    }, [dataValue.id_finca, handleListAreasByFarm]);
+        if (dataValue.id_empresa)
+            handleListFarmsByComany(dataValue.id_empresa);
+    }, [dataValue.id_empresa]);
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        console.log("Formulario enviado");
-    };
+    useEffect(() => {
+        if (dataValue.id_finca)
+            handleListAreasByFarm(dataValue.id_finca);
+    }, [dataValue.id_finca]);
 
-    const dataWeek = processedDataWeek.body.map(body => {
-        const id = body.id;
-        const nombre = body.numero_semana;
-        return { id, nombre};
-    });
-
-    const dataCompany = processedDataCompany.body.map(body => {
-        const id = body.id;
-        const nombre = body.nombre;
-
-        return { id, nombre };
-    });
-
-    const dataFarmsByCompany = processedDataFarmsByCompany.body.map(finca => ({
-            id: String(finca.id),
-            nombre: String(finca.nombre)
+    const dataWeek = processedDataWeek.body.map(body => ({
+        id: body.id,
+        nombre: body.numero_semana
     }));
 
-    const dataAreasByFarm = processedDataAreasByFarm.body.map(area =>({
-        id: String(area.id),
-        nombre: String(area.nombre)
+    const dataCompany = processedDataCompanyByWeek.body.map(body => ({
+        id: body.id,
+        nombre: body.nombre
     }));
-    
 
+    const dataFarmsByCompany = processedDataFarmsByCompany.body.map(body => ({
+        id: body.id,
+        nombre: body.nombre
+    }));
+
+    const dataAreasByFarm = processedDataAreasByFarm.body.map(body => ({
+        id: body.id,
+        nombre: body.nombre
+    }));
 
     return (
-    <>
-        <BasicFilterForm
-            handleSubmit={handleSubmit}
-        >
+        <>
             <SectionForm title="Filtros" direction="row" icon={<BubbleChartIcon fontSize="large" color="slateBlue" />} >
                 <SelectForm title="Semana" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataWeek} fieldName="id_semana" />
                 <SelectForm title="Empresa" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataCompany} fieldName="id_empresa" />
                 <SelectForm title="Finca" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataFarmsByCompany} fieldName="id_finca" />
                 <SelectForm title="Área" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataAreasByFarm} fieldName="id_area" />
             </SectionForm>
-        </BasicFilterForm> 
-    </>
+            <SnackbarComponent snackbarOptions={snackbarOptions} setSnackbarOptions={setSnackbarOptions} />
+        </>
     );
 };
 

@@ -7,7 +7,10 @@ const useActivitiesByFincaAreaList = () => {
     const [processedData, setProcessedData] = useState({ header: [], body: [] });
 
     const handleList = useCallback((id_finca, id_area) => {
-        const url = `${config[process.env.REACT_APP_ENV].API_URL_activity_list_by_finca_area}/${id_finca}/actividad/area/${id_area}/list`;
+        const url = config[process.env.REACT_APP_ENV]
+            .API_URL_activity_list_by_finca_area
+            .replace("?", id_finca)
+            .replace("?", id_area)
         obtenerDatos('GET', url, {}, {"findby": 0});
     }, [obtenerDatos]);
 
@@ -25,13 +28,10 @@ const useActivitiesByFincaAreaList = () => {
                 cns_detalle_finca: item.detalle_finca.cns_detalle_finca
             }));
 
-            console.log("Datos transformados:", transformed);
-
             setProcessedData({
                     body: transformed
                 });
             } else {
-                console.log("Datos no válidos o vacíos:", datos);
                 setProcessedData({ body: [] });
             }
         }, [datos]);

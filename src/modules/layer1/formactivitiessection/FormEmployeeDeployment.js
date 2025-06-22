@@ -1,6 +1,6 @@
 import BasicForm from "../admin/BasicForm";
 import { SectionForm, SelectForm, InputForm } from "../admin/Form";
-import { useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import PersonIcon from '@mui/icons-material/Person';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import ButtonComponent from "../../../components/buttons/ButtonComponent";
@@ -11,42 +11,46 @@ import AddIcon from '@mui/icons-material/Add';
 import { Stack } from "@mui/material";
 import AditionalEmployeeModal from "../../../components/modals/AditionalEmployeeModal";
 import AditionalActivityModal from "../../../components/modals/AditionalActivityModal";
-import useEmployeeList from "../formemployee/useEmployeeList";
-import useActivityList from "../formactivities/useActivityList";
+import useFilterEmployeeByFarm from "../formemployee/useFilterEmployeeByFarm"
 import useCompanyList from "../formcompany/useCompanyList";
+import useWeekLogList from '../../layer1/formweeklog/useWeekLogList';
+import useFilterActivityByWeekFarmArea from "./useFilterActivityByWeekFarmArea";
+import { toLocalDate } from "../../../utils/dateUtil";
+import SnackbarComponent from "../../../components/snackbar/SnackbarComponent";
+import useSnackbarOption from "../../../hooks/useSnackbarOption";
 
+const FormEmployeeDeployment = ({
+    dataValue, setDataValue, filterData,
+    setActivityCaptureData, modeUpdate, setModeUpdate
+}) => {
 
-const FormEmployeeDeployment = ({dataValue, setDataValue, processedDataWeek, setActivityCaptureData}) => {
-
-    const { handleList: handleListEmployee, processedData: processedDataEmployee } = useEmployeeList();
-    const { handleList: handleListActivity, processedData: processedDataActivity } = useActivityList();
+    const { handleList: handleListEmployee, processedData: processedDataEmployee } = useFilterEmployeeByFarm();
+    const { handleList: handleListActivity, processedData: processedDataActivity } = useFilterActivityByWeekFarmArea();
     const { handleList: handleListCompany, processedData: processedDataCompany } = useCompanyList();
+    const { handleList: handleListWeek, processedData: processedDataWeek, error: errorWeek } = useWeekLogList();
 
     const [isAditionalEmployeeModalOpen, setIsAditionalEmployeeModalOpen] = useState(false);
     const [isAditionalActivityModalOpen, setIsAditionalActivityModalOpen] = useState(false);
-    
-    
-    useEffect(() => {
-        handleListActivity();
-    }, [handleListActivity]);
+
+    const { snackbarOptions, setSnackbarOptions, showMessage } = useSnackbarOption();
 
     useEffect(() => {
-        handleListEmployee();
-    }, [handleListEmployee]);
-
-    useEffect (() => {
+        handleListActivity(filterData.id_semana, filterData.id_finca, filterData.id_area); // Obteniendo las actividades 
         handleListCompany();
-    }, [handleListCompany]);
+        handleListEmployee(filterData.id_finca); // Obteniendo los empleados de la finca
+        handleListWeek(filterData.id_semana) // Obteniendo los datos de la semana seleccionada
+    }, []);
 
-    const selectedWeek = processedDataWeek.body.find(
-        week => week.id === dataValue.id_semana
-    );
+    useEffect(() => { if (errorWeek) showMessage("Ocurrio un error al obtener las fechas", "error")}, [errorWeek])
+
+    const selectedWeek = processedDataWeek.body
 
     let dateOptions = [];
+
     if (selectedWeek) {
-        const start = new Date(selectedWeek.fecha_inicio);
-        const end = new Date(selectedWeek.fecha_fin);
-        let current = new Date(start);
+        const start = toLocalDate(selectedWeek.fecha_inicio);
+        const end = toLocalDate(selectedWeek.fecha_fin);
+        let current = toLocalDate(start);
         while (current <= end) {
             // Formato yyyy-MM-dd para el value y dd/MM/yyyy para mostrar
             const yyyy = current.getFullYear();
@@ -60,80 +64,113 @@ const FormEmployeeDeployment = ({dataValue, setDataValue, processedDataWeek, set
         }
     }
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-
-        // Buscar el empleado y la actividad seleccionados
-        const empleado = processedDataEmployee.body.find(emp => emp.id === dataValue.id_empleado);
-        const actividad = processedDataActivity.body.find(act => act.id === dataValue.id_actividad);
-
-        setActivityCaptureData(prev => [
-            ...prev,
-            {
-                id_empleado: dataValue.id_empleado,
-                nombre_empleado: empleado ? `${empleado.nombre} ${empleado.ap_paterno} ${empleado.ap_materno}` : "",
-                id_actividad: dataValue.id_actividad,
-                nombre_actividad: actividad ? actividad.nombre : "",
-                cantidad_avance: dataValue.cantidad_avance,
-                fecha: dataValue.fecha,
-                id: Date.now()
-            }
-        ]);
-
-        // Limpia solo los campos de empleado, actividad, cantidad y fecha
-        setDataValue(prev => ({
-            ...prev,
-            id_empleado: null,
-            id_actividad: "",
+    const handleReset = () => {
+        setDataValue({
+            id_trabajador: null,
+            id_actividad: null,
             cantidad_avance: "",
             fecha: null
-        }));
-    };
-    
-    
+        })
+    }
 
-    const openModalAditionalEmployee  = () => {
+    const openModalAditionalEmployee = () => {
         setIsAditionalEmployeeModalOpen(true);
     };
 
-    const openModalAditionalActivity  = () => {
+    const openModalAditionalActivity = () => {
         setIsAditionalActivityModalOpen(true);
     };
 
-    const dataEmployee = processedDataEmployee.body
-    .filter(emp => emp.id_finca === dataValue.id_finca)
-    .map(emp => ({
+    const dataEmployee = processedDataEmployee.body.map(emp => ({
         id: emp.id,
         nombre: `${emp.nombre} ${emp.ap_paterno} ${emp.ap_materno}`
     }));
 
     const dataActivity = processedDataActivity.body.map((item) => ({
-        id: item.id,
-        nombre: item.nombre,
+        id: item.actividad.id,
+        nombre: item.actividad.nombre,
     }));
 
-    const dataCompany = processedDataCompany.body.map(body => {
-        const id = body.id;
-        const nombre = body.nombre;
+    const dataCompany = processedDataCompany.body.map(body => ({
+        id: body.id,
+        nombre: body.nombre,
+    }));
 
-        return { id, nombre };
-    });
-    
+    const handleSubmit = (event) => {
+        event.preventDefault();
+
+        // Buscar el empleado y la actividad seleccionados
+        const trabajador = dataEmployee.find(emp => emp.id === dataValue.id_trabajador);
+        const actividad = dataActivity.find(act => act.id === dataValue.id_actividad);
+
+        setActivityCaptureData(prev => [
+            ...prev,
+            {
+                trabajador: {
+                    id: dataValue.id_trabajador,
+                    nombre: trabajador.nombre
+                },
+                actividad: {
+                    id: dataValue.id_actividad,
+                    nombre: actividad.nombre
+                },
+                cantidad_avance: dataValue.cantidad_avance,
+                fecha: dataValue.fecha,
+            }
+        ]);
+
+        handleReset()
+    };
+
+    const handleCancel = () => {
+        handleReset()
+        setModeUpdate(!modeUpdate)
+    }
+
+    const handleUpdate = (event) => {
+        event.preventDefault();
+
+        setActivityCaptureData(data => {
+            if (data.id === dataValue.id) {
+                const trabajador = dataEmployee.find(emp => emp.id === dataValue.id_trabajador);
+                const actividad = dataActivity.find(act => act.id === dataValue.id_actividad);
+
+                return [{
+                    trabajador: {
+                        id: dataValue.id_trabajador,
+                        nombre: trabajador.nombre,
+                    },
+                    actividad: {
+                        id: dataValue.id_actividad,
+                        nombre: actividad.nombre,
+                    },
+                    cantidad_avance: dataValue.cantidad_avance,
+                    fecha: dataValue.fecha,
+                }]
+            }
+
+            return [data]
+        })
+
+        handleReset()
+        setModeUpdate(false)
+    }
 
     return (
-    <>
-        <BasicForm
-                handleSubmit={handleSubmit}
-                buttons={<ButtonFormEmployeeDeployment />}
+        <>
+            <BasicForm
+                handleSubmit={modeUpdate ? handleUpdate : handleSubmit}
+                handleReset={modeUpdate ? handleCancel : handleReset}
+                buttons={<ButtonFormEmployeeDeployment isUpdate={modeUpdate} />}
             >
                 <Stack width="100%" gap={2}>
                     <SectionForm title="Despliegue de Empleado" direction="row"
-                        icon={<PersonIcon fontSize='large'  color='slateBlue' />}
+                        icon={<PersonIcon fontSize='large' color='slateBlue' />}
                     >
-                        <BasicButtonComponent onClick={openModalAditionalEmployee} styleButton="contained" icon = {<PersonAddAlt1Icon fontSize="medium" />} color="vividBlue" width="40px" height="40px"/>
-                        <SelectForm title="Empleado" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataEmployee} fieldName="id_empleado" />
+                        <BasicButtonComponent onClick={openModalAditionalEmployee} styleButton="contained" icon={<PersonAddAlt1Icon fontSize="medium" />} color="vividBlue" width="40px" height="40px" />
+                        <SelectForm title="Empleado" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataEmployee} fieldName="id_trabajador" />
                         <SelectForm title="Actividad" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataActivity} fieldName="id_actividad" />
-                        <InputForm  title="Cantidad de Avance" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="cantidad_avance" type="number"/>
+                        <InputForm title="Cantidad de Avance" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="cantidad_avance" type="number" />
                         <SelectForm title="Fecha" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dateOptions} fieldName="fecha" />
                     </SectionForm>
 
@@ -146,9 +183,10 @@ const FormEmployeeDeployment = ({dataValue, setDataValue, processedDataWeek, set
                     />
                 </Stack>
             </BasicForm>
-            <AditionalEmployeeModal openDialog={isAditionalEmployeeModalOpen} setIsAditionalEmployeeModalOpen={setIsAditionalEmployeeModalOpen} dataValue={dataValue} setDataValue={setDataValue} dataCompany={dataCompany}/> 
-            <AditionalActivityModal openDialog={isAditionalActivityModalOpen} setIsAditionalEmployeeModalOpen={setIsAditionalActivityModalOpen} dataValue={dataValue} setDataValue={setDataValue} dataCompany={dataCompany}/> 
-    </>
+            <AditionalEmployeeModal openDialog={isAditionalEmployeeModalOpen} setIsAditionalEmployeeModalOpen={setIsAditionalEmployeeModalOpen} dataValue={dataValue} setDataValue={setDataValue} dataCompany={dataCompany} />
+            <AditionalActivityModal openDialog={isAditionalActivityModalOpen} setIsAditionalEmployeeModalOpen={setIsAditionalActivityModalOpen} dataValue={dataValue} setDataValue={setDataValue} dataCompany={dataCompany} />
+            <SnackbarComponent snackbarOptions={snackbarOptions} setSnackbarOptions={setSnackbarOptions} />
+        </>
     );
 };
 
@@ -172,8 +210,4 @@ const ButtonFormEmployeeDeployment = ({ isUpdate = false }) => {
     );
 }
 
-
-
-export default FormEmployeeDeployment;
-
-
+export default FormEmployeeDeployment

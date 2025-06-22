@@ -108,7 +108,7 @@ const MenuComponent = ({ menuOptions = [], row }) => {
                 <MoreVertRoundedIcon />
             </IconButton>
             <Menu open={openMenu} anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
-                <MenuList >
+                <MenuList disablePadding >
                     {menuOptions.map((option, index) => (
                         <MenuItem
                             key={index}
@@ -122,7 +122,7 @@ const MenuComponent = ({ menuOptions = [], row }) => {
                                 }
                             }}
                         >
-                            {option.icon && <span style={{ marginRight: 8 }}>{option.icon}</span>}
+                            {option.icon}
                             {option.text}
                         </MenuItem>
                     ))}

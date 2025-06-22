@@ -13,6 +13,7 @@ const AdminBudgetPage = () => {
 
     const [closeWeek, setCloseWeek] = useState(false);
     const [closeBudget, setCloseBudget] = useState(false);
+    const [closeAcivityCapture, setCloseAcivityCapture] = useState(false);
 
     useEffect(() => {
         if (closeWeek) {
@@ -24,37 +25,38 @@ const AdminBudgetPage = () => {
         <>
             <Header text="Gestión de Presupuestos" />
 
-            <AccordionComponent 
-                disableHiddenTitle 
+            <AccordionComponent
+                disableHiddenTitle
                 close={closeWeek}
-                title="Captura de Semanas" 
+                title="Captura de Semanas"
                 icon={<EventIcon fontSize='large' color='slateBlue' />}
             >
-                <CatchWeek onClose={setCloseWeek}/>
+                <CatchWeek onClose={setCloseWeek} />
             </AccordionComponent>
 
-            <Divider/>
+            <Divider />
 
-            <AccordionComponent 
-            disableHiddenTitle 
-            close={closeBudget}
-            title="Apartado de Presupuesto" 
-            icon={<AttachMoneyIcon fontSize='large'  color='slateBlue' />}
+            <AccordionComponent
+                disableHiddenTitle
+                close={closeBudget}
+                title="Apartado de Presupuesto"
+                icon={<AttachMoneyIcon fontSize='large' color='slateBlue' />}
             >
-                <BudgetSection BigButton ={BigButton} onClose={setCloseBudget}/>
+                <BudgetSection BigButton={BigButton} onClose={setCloseBudget} />
             </AccordionComponent>
-            
-            <Divider/>
 
-            <AccordionComponent 
-                disableHiddenTitle 
-                title="Apartado de Actividades" 
-                icon={<ViewComfyIcon fontSize='large'  color='slateBlue' />}
-                >
-                    <ActivitiesSection BigButton ={BigButton}/>
+            <Divider />
+
+            <AccordionComponent
+                disableHiddenTitle
+                close={closeAcivityCapture}
+                title="Apartado de Actividades"
+                icon={<ViewComfyIcon fontSize='large' color='slateBlue' />}
+            >
+                <ActivitiesSection BigButton={BigButton} onClose={setCloseAcivityCapture}/>
             </AccordionComponent>
-            
-            <Divider/>
+
+            <Divider />
         </>
     )
 };
@@ -80,13 +82,13 @@ const BigButton = ({ label, onClick, icon }) => {
                     boxShadow: '0px 3px 9px rgba(0, 0, 0, 0.3)', // <- SOMBRA
                     transition: 'box-shadow 0.3s ease-in-out',
                     '&:hover': {
-                    boxShadow: '0px 6px 15px rgba(0, 0, 0, 0.6)', // sombra al pasar el cursor
+                        boxShadow: '0px 6px 15px rgba(0, 0, 0, 0.6)', // sombra al pasar el cursor
                     },
                 }}
             >
                 {icon}
             </Button>
-            <Typography variant = "h6" sx={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#495361', paddingTop: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#495361', paddingTop: 2 }}>
                 {label}
             </Typography>
         </Box>

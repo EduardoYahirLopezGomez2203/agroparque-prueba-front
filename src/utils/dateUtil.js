@@ -1,9 +1,14 @@
 // Transforma la fecha con formato ISO 8601 a YYYY/MM/DD
 export const toLocalDate = (date) => {
-    if (typeof date !== "string") 
+    if (typeof date !== "string")
         return date
 
     return new Date(date.replaceAll('-', '/'))
+}
+
+export const toISO8601 = (date) => {
+    const [d, m, y] = date.split("/");
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
 }
 
 export const weekDays = [
