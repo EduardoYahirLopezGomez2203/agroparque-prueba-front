@@ -59,9 +59,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         if(datoBudgetCreate?.status){
             if(datoBudgetCreate.status === "success"){
                 showAlert("Registro exitoso.", "success");
-            } else {
-                showAlert("No se pudo registrar.", "error");
             }
+        } else {
+            showAlert("No se pudo registrar.", "error");
         }
     },[datoBudgetCreate])
 
@@ -69,9 +69,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         if(datoBudgetUpdate?.status){
             if(datoBudgetUpdate.status === "success"){
                 showAlert("Actualización exitosa.", "success");
-            } else {
-                showAlert("No se pudo actualizar.", "error");
-            }
+            } 
+        } else {
+            showAlert("No se pudo actualizar.", "error");
         }
     },[datoBudgetUpdate])
 
@@ -79,9 +79,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         if(datoBudgetDelete?.status){
             if(datoBudgetDelete.status === "success"){
                 showAlert("Eliminación exitosa.", "success");
-            } else {
-                showAlert("No se pudo eliminar.", "error");
-            }
+            } 
+        } else {
+            showAlert("No se pudo eliminar.", "error");
         }
     },[datoBudgetDelete])
 
@@ -89,9 +89,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         if(datoBudgetUpdateStatus?.status){
             if(datoBudgetUpdateStatus.status === "success"){
                 showAlert("Actualización exitosa.", "success");
-            } else {
-                showAlert("No se pudo actualizar.", "error");
-            }
+            } 
+        } else {
+            showAlert("No se pudo actualizar.", "error");
         }
     },[datoBudgetUpdateStatus])
 
@@ -99,9 +99,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         if(datoBudgetUpdateCreateNewActivities?.status){
             if(datoBudgetUpdateCreateNewActivities.status === "success"){
                 showAlert("Actualización de nuevas actividades exitosa.", "success");
-            } else {
-                showAlert("No se pudo actualizar.", "error");
-            }
+            } 
+        } else {
+            showAlert("No se pudo actualizar.", "error");
         }
     },[datoBudgetUpdateCreateNewActivities])
 
