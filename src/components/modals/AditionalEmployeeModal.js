@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Dialog, Box, Divider, Typography, Stack } from "@mui/material";
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import IconTextComponent from '../icontexts/IconTextComponent';
@@ -7,8 +7,15 @@ import ButtonComponent from "../buttons/ButtonComponent";
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import InputComponent from "../inputs/InputComponent";
+import useFilterEmployeeByCompany from "../../modules/layer1/formemployee/useFilterEmployeeByCompany";
 
 const AditionalEmployeeModal = ({openDialog, setIsAditionalEmployeeModalOpen, dataValue, setDataValue, dataCompany}) => {
+    
+    const { handleList: handleListEmployee, processedData: processedDataEmployee, error: errorEmployee} = useFilterEmployeeByCompany()
+
+    useEffect(() => {
+        handleListEmployee(dataCompany.id)
+    }, [])
 
     const closeModal = () => {
         setIsAditionalEmployeeModalOpen(false);
