@@ -183,8 +183,24 @@ const FormEmployeeDeployment = ({
                     />
                 </Stack>
             </BasicForm>
-            <AditionalEmployeeModal openDialog={isAditionalEmployeeModalOpen} setIsAditionalEmployeeModalOpen={setIsAditionalEmployeeModalOpen} dataValue={dataValue} setDataValue={setDataValue} dataCompany={dataCompany} />
-            <AditionalActivityModal openDialog={isAditionalActivityModalOpen} setIsAditionalEmployeeModalOpen={setIsAditionalActivityModalOpen} dataValue={dataValue} setDataValue={setDataValue} dataCompany={dataCompany} />
+            <AditionalEmployeeModal 
+                openDialog={isAditionalEmployeeModalOpen}
+                setIsAditionalEmployeeModalOpen={setIsAditionalEmployeeModalOpen} 
+                setActivityCaptureData={setActivityCaptureData} 
+                dataCompany={dataCompany} 
+                dataActivity={dataActivity}
+                showMessage={showMessage}
+                dateOptions={dateOptions}
+            />
+            <AditionalActivityModal 
+                openDialog={isAditionalActivityModalOpen}
+                setIsAditionalEmployeeModalOpen={setIsAditionalActivityModalOpen} 
+                setActivityCaptureData={setActivityCaptureData} 
+                dataCompany={dataCompany} 
+                dataActivity={dataActivity}
+                showMessage={showMessage}
+                dateOptions={dateOptions} 
+            />
             <SnackbarComponent snackbarOptions={snackbarOptions} setSnackbarOptions={setSnackbarOptions} />
         </>
     );
