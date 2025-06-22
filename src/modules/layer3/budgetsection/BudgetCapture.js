@@ -319,7 +319,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         }
         setTimeout(() => {
             onClose(true);
-        }, 2500);
+        }, 3500);
     }
 
     const cancelValidation = () => {
@@ -489,7 +489,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             <ConfirmBudgetedActivityModal open={isConfirmBudgetedActivityModalOpen} setIsConfirmBudgetedActivityModalOpen = {setIsConfirmBudgetedActivityModalOpen} onAccept={onAcceptAutorization} onReject={onRejectAutorization} onViewFile={onViewFile}/>
             <Snackbar
                 open={alertInfo.open}
-                autoHideDuration={2500}
+                autoHideDuration={1800}
                 onClose={closeAlert}
                 onExited={handleExited} // <-- agrega esto
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}

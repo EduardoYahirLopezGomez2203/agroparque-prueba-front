@@ -17,25 +17,23 @@ const FormBudget = ({ dataValue, setDataValue, dataTable, setDataTable, isUpdate
     //Efecto para calcular el total por el precio y cantidad de la actividad
     useEffect(() => {
         // Solo realiza la operación si ambos valores existen y son números válidos
-        if(!dataValue.isPastBudget){
-            const precio = parseFloat(dataValue.precio);
-            const cantidad = parseFloat(dataValue.cantidad);
+        const precio = parseFloat(dataValue.precio);
+        const cantidad = parseFloat(dataValue.cantidad);
 
-            if (!isNaN(precio) && !isNaN(cantidad)) {
-                const total = String(Number((precio * cantidad).toFixed(2))); // <-- aquí el cambio
-                if (dataValue.total !== total) {
-                    setDataValue(prev => ({
-                        ...prev,
-                        total: total
-                    }));
-                }
-            } else if (dataValue.total !== "") {
-                // Si alguno no es válido, limpia el total
+        if (!isNaN(precio) && !isNaN(cantidad)) {
+            const total = String(Number((precio * cantidad).toFixed(2))); // <-- aquí el cambio
+            if (dataValue.total !== total) {
                 setDataValue(prev => ({
                     ...prev,
-                    total: ""
+                    total: total
                 }));
             }
+        } else if (dataValue.total !== "") {
+            // Si alguno no es válido, limpia el total
+            setDataValue(prev => ({
+                ...prev,
+                total: ""
+            }));
         }
     }, [dataValue.isPastBudget, dataValue.precio, dataValue.cantidad, setDataValue, dataValue.total]);
 
