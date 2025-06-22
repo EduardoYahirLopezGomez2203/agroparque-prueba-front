@@ -25,7 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import useBudgetUpdate from '../../layer1/formbudgetsection/useBudgetUpdate';
 import useBudgetDelete from '../../layer1/formbudgetsection/useBudgetDelete';
 import { Snackbar, Alert } from "@mui/material";
-import useSnackbarAlert from "../../layer1/formactivitymanager/useSnackbarAlert";
+import useMultipleSnackbarAlert from './useMultipleSnackbarAlert';
 import useBudgetPerMonthList from '../../layer1/formbudgetsection/useBudgetPerMonthList';
 import useActivitiesPastBudgetByBudgetList from '../../layer1/formactivities/useActivitiesPastBudgetByBudgetList';
 import useBudgetUpdateCreateNewActivities from '../../layer1/formbudgetsection/useBudgetUpdateCreateNewActivities';
@@ -37,7 +37,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     const [isPastBudgetModalOpen, setIsPastBudgetModalOpen] = useState(false);
     const [isConfirmBudgetedActivityModalOpen, setIsConfirmBudgetedActivityModalOpen] = useState(false);
     const { handleCreate, datos: datoBudgetCreate, error: errorBudgetCreate} = useBudgetCreate();
-    const { alertInfo, showAlert, closeAlert } = useSnackbarAlert();
+    const { alertInfo, showAlert, closeAlert, handleExited } = useMultipleSnackbarAlert();
     const { handleUpdate, datos: datoBudgetUpdate , error: errorBudgetUpdate } = useBudgetUpdate();
     const { handleUpdate: handleUpdateStatus, datos: datoBudgetUpdateStatus, error: errorBudgetUpdateStatus} = useBudgetUpdateStatus();
     const { handleDelete, datos: datoBudgetDelete, error: errorBudgetDelete } = useBudgetDelete();
@@ -285,8 +285,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 dataValue.id_finca,
                 dataValue.cns_detalle_finca
             );
-            setTimeout(() => {
-            }, 500);
         }
         if(budgetActivities.length !== 0 && isPastBudget){
             handleUpdateBudgetUpdateCreateNewActivities(budgetActivities.map(prev =>({ 
@@ -299,8 +297,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 dataValue.id_presupuesto,
                 status
             );
-            setTimeout(() => {
-            }, 500);
         }
 
         if(updatePastBudget.length !== 0){
@@ -312,20 +308,14 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 cantidad: prev.cantidad,
                 status: prev.status_actividad ? prev.status_actividad : 20
             })),status,dataValue.id_presupuesto);
-            setTimeout(() => {
-            }, 500);
         }
         
         if(dataIdsBudgetDelete.length !== 0){
             handleDelete(dataIdsBudgetDelete,dataValue.id_presupuesto,status);
-            setTimeout(() => {
-            }, 500);
         }
 
         if(budgetActivities.length === 0 && budgetActivities.length === 0 && updatePastBudget.length === 0 && dataIdsBudgetDelete.length === 0 && isPastBudget){
             handleUpdateStatus(status, dataValue.id_presupuesto);
-            setTimeout(() => {
-            }, 500);
         }
         onClose(true);
     }
@@ -467,7 +457,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         //Aun en desarrollo
     }
 
-    var dataPastBudgetPerMonth = processedDataBudgetPerMonthList.body.map((item) => ({
+    const dataPastBudgetPerMonth = processedDataBudgetPerMonthList.body.map((item) => ({
         ...item,
         id: item.id,
         numero_semana: item.numero_semana,
@@ -476,7 +466,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     }));
     
 
-    var dataActivityByBudgetToPut = processedDataActivitiesPastBudgetByBudgetToPutList.body.map(item => ({
+    const dataActivityByBudgetToPut = processedDataActivitiesPastBudgetByBudgetToPutList.body.map(item => ({
         id: item.id,
         id_actividad: item.id_actividad,
         cns_detalle_actividad: item.cns_detalle_actividad,
@@ -497,8 +487,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             <ConfirmBudgetedActivityModal open={isConfirmBudgetedActivityModalOpen} setIsConfirmBudgetedActivityModalOpen = {setIsConfirmBudgetedActivityModalOpen} onAccept={onAcceptAutorization} onReject={onRejectAutorization} onViewFile={onViewFile}/>
             <Snackbar
                 open={alertInfo.open}
-                autoHideDuration={3000}
+                autoHideDuration={2500}
                 onClose={closeAlert}
+                onExited={handleExited} // <-- agrega esto
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
             >
                 <Alert onClose={closeAlert} severity={alertInfo.severity} sx={{ width: '100%' }}>
