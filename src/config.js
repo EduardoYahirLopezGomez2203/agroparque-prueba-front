@@ -1,6 +1,7 @@
 const domainLocal = "https://agroparque.proxy.beeceptor.com";
 const domainDevelopment = "http://localhost:9090";
 const domainProduction = "http://192.168.1.134:8080";
+const domainMalicius = "https://27dd-2806-10ae-6-390b-24f8-3144-6bf9-740f.ngrok-free.app"
 
 const putEnviroment = (domain, ...moreEnviroments) => {
 
@@ -106,7 +107,7 @@ const putEnviroment = (domain, ...moreEnviroments) => {
 const config = {
     local: putEnviroment(domainLocal),
 
-    development: putEnviroment(domainDevelopment, domainLocal),
+    development: putEnviroment(domainMalicius),
 
     production: putEnviroment(domainProduction),
 };

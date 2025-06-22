@@ -23,7 +23,7 @@ import AdminBudgetPage from "../pages/AdminBudgetPage";
 
 const AppRouter = () => {
   return (  
-    <Router basename="/agroparque_prenomina"> 
+    <Router basename="/"> 
       <Routes>
             <Route exact path="/" element={
                                             <AuthProvider>

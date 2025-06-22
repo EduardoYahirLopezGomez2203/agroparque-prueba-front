@@ -17,6 +17,7 @@ const ApiService = {
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: this.token ? `Bearer ${this.token}` : "",
+                    "ngrok-skip-browser-warning": "true",
                     ...customHeaders //MODIFICACIÓN: Aquí se utiliza los customHeaders para la sección de los parámetros
                 },
                 redirect: "manual", // manual, *follow, error
