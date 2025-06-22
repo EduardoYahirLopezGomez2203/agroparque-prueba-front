@@ -41,7 +41,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     const { handleUpdate, datos: datoBudgetUpdate } = useBudgetUpdate();
     const { handleUpdate: handleUpdateStatus, datos: datoBudgetUpdateStatus } = useBudgetUpdateStatus();
     const { handleDelete, datos: datoBudgetDelete } = useBudgetDelete();
-    const { handleUpdate: handleUpdateBudgetUpdateCreateNewActivities } = useBudgetUpdateCreateNewActivities();
+    const { handleUpdate: handleUpdateBudgetUpdateCreateNewActivities, datos: datoBudgetUpdateCreateNewActivities} = useBudgetUpdateCreateNewActivities();
     const { handleList: handleListBudgetPerMonthList, processedData: processedDataBudgetPerMonthList } = useBudgetPerMonthList();
     const { handleList: handleListActivitiesPastBudgetByBudgetList, processedData: processedDataActivitiesPastBudgetByBudgetList } = useActivitiesPastBudgetByBudgetList();
     const { handleList: handleListActivitiesPastBudgetByBudgetToPutList, processedData: processedDataActivitiesPastBudgetByBudgetToPutList } = useActivitiesPastBudgetByBudgetList();
@@ -94,6 +94,16 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             }
         }
     },[datoBudgetUpdateStatus])
+
+    useEffect(() =>{
+        if(datoBudgetUpdateCreateNewActivities?.status){
+            if(datoBudgetUpdateCreateNewActivities.status === "success"){
+                showAlert("Actualización de nuevas actividades exitosa.", "success");
+            } else {
+                showAlert("No se pudo actualizar.", "error");
+            }
+        }
+    },[datoBudgetUpdateCreateNewActivities])
 
     useEffect(()=>{
         if(dataSecondary.id_mes){
@@ -187,6 +197,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             setUpdate(false);
             handleBack();
         }
+        setIsPastBudget(false);
     };
 
     const firstValidation = () => {
@@ -232,6 +243,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         setTimeout(() => {
             onClose(true);
         }, 2000);
+        setIsPastBudget(false);
     };
 
     const saveValidation = () => {
@@ -252,6 +264,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         setTimeout(() => {
             onClose(true);
         }, 2000);
+        setIsPastBudget(false);
     };
 
     const saveBudget = (status) => {
