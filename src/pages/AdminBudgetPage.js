@@ -18,8 +18,10 @@ const AdminBudgetPage = () => {
     useEffect(() => {
         if (closeWeek) {
             setCloseWeek(false);
+        } else if (closeAcivityCapture) {
+            setCloseAcivityCapture(false)
         }
-    }, [closeWeek]);
+    }, [closeWeek, closeAcivityCapture]);
 
     return (
         <>
