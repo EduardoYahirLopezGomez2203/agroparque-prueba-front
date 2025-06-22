@@ -317,7 +317,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         if(budgetActivities.length === 0 && budgetActivities.length === 0 && updatePastBudget.length === 0 && dataIdsBudgetDelete.length === 0 && isPastBudget){
             handleUpdateStatus(status, dataValue.id_presupuesto);
         }
-        onClose(true);
+        setTimeout(() => {
+            onClose(true);
+        }, 2500);
     }
 
     const cancelValidation = () => {
