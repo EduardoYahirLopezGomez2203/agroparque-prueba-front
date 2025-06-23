@@ -32,6 +32,8 @@ import useBudgetUpdateCreateNewActivities from '../../layer1/formbudgetsection/u
 import useBudgetUpdateStatus from '../../layer1/formbudgetsection/useBudgetUpdateStatus';
 import ConfirmBudgetedActivityModal from '../../../components/modals/ConfirmBudgetedActivityModal';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import useFileByBudgetedActivityList from '../../layer1/formbudgetsection/useFileByBudgetedActivityList';
+import useFileBudgetedActivityByUrl from '../../layer1/formbudgetsection/useFileBudgetedActivityByUrl';
 
 const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData,dataValue, setDataValue, activeStep, setActiveStep, isPastBudget, setIsPastBudget, onClose}) => {
     const [isPastBudgetModalOpen, setIsPastBudgetModalOpen] = useState(false);
@@ -45,6 +47,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     const { handleList: handleListBudgetPerMonthList, processedData: processedDataBudgetPerMonthList } = useBudgetPerMonthList();
     const { handleList: handleListActivitiesPastBudgetByBudgetList, processedData: processedDataActivitiesPastBudgetByBudgetList } = useActivitiesPastBudgetByBudgetList();
     const { handleList: handleListActivitiesPastBudgetByBudgetToPutList, processedData: processedDataActivitiesPastBudgetByBudgetToPutList } = useActivitiesPastBudgetByBudgetList();
+    const { handleList: handleFileByBudgetedActivityList, processedData: processedDataFileByBudgetedActivityList} = useFileByBudgetedActivityList();
+    const { handleList: handleFileBudgetedActivityByUrl, document } = useFileBudgetedActivityByUrl();
+
     const [update, setUpdate] = useState(false);
     const [updatePastBudget, setUpdatePastBudget] = useState([]);
     const [dataIdsBudgetDelete, setDataIdsBudgetDelete] = useState([]);
@@ -162,6 +167,42 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         }
     }, [dataValue.id_presupuesto, isPastBudget, handleListActivitiesPastBudgetByBudgetList]);
 
+    
+    useEffect(() => {
+        if (
+            processedDataFileByBudgetedActivityList.body &&
+            Array.isArray(processedDataFileByBudgetedActivityList.body) &&
+            processedDataFileByBudgetedActivityList.body.length > 0
+        ) {
+            const url = processedDataFileByBudgetedActivityList.body[0].documento;
+            console.log("url recibida", url);
+
+            if (url) {
+                handleFileBudgetedActivityByUrl(url);
+            } else {
+                showAlert(`No se encontró un archivo para esta actividad adicional`, "warning");
+            }
+        }
+    }, [processedDataFileByBudgetedActivityList, handleFileBudgetedActivityByUrl]);
+
+    useEffect(() => {
+        if (document && document.length > 0) {
+            const base64 = document[0].archivo;
+            if (base64) {
+                const fileName = document[0].nombre || "archivo_descargado";
+                const mimeType = document[0].mimeType || "application/octet-stream";
+                const link = document.createElement("a");
+                link.href = `data:${mimeType};base64,${base64}`;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                showAlert(`No se encontró un archivo para esta actividad adicional`, "warning");
+            }
+        }
+    }, [document]);
+        
     useEffect(() => {
         if (isPastBudget && processedDataActivitiesPastBudgetByBudgetList.body.length > 0) {
             setDataTable(
@@ -521,7 +562,16 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     }
 
     const onViewFile = () => {
-        //Aun en desarrollo
+        if (
+            rowToAutorizate &&
+            dataValue.id_presupuesto &&
+            rowToAutorizate.cns_detalle_presupuesto
+        ) {
+            handleFileByBudgetedActivityList(
+                dataValue.id_presupuesto,
+                rowToAutorizate.cns_detalle_presupuesto
+            );
+        }
     }
 
     const dataPastBudgetPerMonth = processedDataBudgetPerMonthList.body.map((item) => ({
