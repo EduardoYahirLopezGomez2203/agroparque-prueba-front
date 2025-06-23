@@ -48,7 +48,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     const { handleList: handleListActivitiesPastBudgetByBudgetList, processedData: processedDataActivitiesPastBudgetByBudgetList } = useActivitiesPastBudgetByBudgetList();
     const { handleList: handleListActivitiesPastBudgetByBudgetToPutList, processedData: processedDataActivitiesPastBudgetByBudgetToPutList } = useActivitiesPastBudgetByBudgetList();
     const { handleList: handleFileByBudgetedActivityList, processedData: processedDataFileByBudgetedActivityList} = useFileByBudgetedActivityList();
-    const { handleList: handleFileBudgetedActivityByUrl, document } = useFileBudgetedActivityByUrl();
+    const { handleList: handleFileBudgetedActivityByUrl, processedData } = useFileBudgetedActivityByUrl();
 
     const [update, setUpdate] = useState(false);
     const [updatePastBudget, setUpdatePastBudget] = useState([]);
@@ -186,22 +186,23 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     }, [processedDataFileByBudgetedActivityList, handleFileBudgetedActivityByUrl]);
 
     useEffect(() => {
-        if (document && document.length > 0) {
-            const base64 = document[0].archivo;
-            if (base64) {
-                const fileName = document[0].nombre || "archivo_descargado";
-                const mimeType = document[0].mimeType || "application/octet-stream";
+        if (processedData && processedData.body && processedData.body.length > 0) {
+            const base64Full = processedData.body[0].documento;
+            const fileName = processedData.body[0].nombre || "archivo_descargado";
+
+            if (base64Full.startsWith("data:")) {
                 const link = document.createElement("a");
-                link.href = `data:${mimeType};base64,${base64}`;
+                link.href = base64Full;
                 link.download = fileName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
             } else {
-                showAlert(`No se encontró un archivo para esta actividad adicional`, "warning");
+                showAlert(`No se encontró un archivo válido para descargar`, "warning");
             }
         }
-    }, [document]);
+    }, [processedData]);
+
         
     useEffect(() => {
         if (isPastBudget && processedDataActivitiesPastBudgetByBudgetList.body.length > 0) {
