@@ -2,25 +2,26 @@ import React, { useEffect, useState } from "react";
 import { Dialog, Box, Divider, Typography, Stack } from "@mui/material";
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import IconTextComponent from '../icontexts/IconTextComponent';
-import SelectComponent from "../selects/SelectComponent";
 import ButtonComponent from "../buttons/ButtonComponent";
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import InputComponent from "../inputs/InputComponent";
 import useFilterEmployeeByCompany from "../../modules/layer1/formemployee/useFilterEmployeeByCompany";
-import { SelectForm } from "../../modules/layer1/admin/Form";
+import { InputForm, SelectForm } from "../../modules/layer1/admin/Form";
+import useCompanyList from "../../modules/layer1/formcompany/useCompanyList";
 
-// Checar errores
 const AditionalEmployeeModal = ({
-    openDialog, setIsAditionalEmployeeModalOpen, setActivityCaptureData,
-    dataCompany, dataActivity, showMessage, dateOptions
+    openDialog, setIsAditionalEmployeeModalOpen, setActivityCaptureData, dataActivity, showMessage, dateOptions
 }) => {
 
     const { handleList: handleListEmployee, processedData: processedDataEmployee, error: errorEmployee } = useFilterEmployeeByCompany()
+    const { handleList: handleListCompany, processedData: processedDataCompany, error: errorCompany } = useCompanyList()
+
+    useEffect(() => {
+        handleListCompany() // Listamos todas las empresas
+    }, [])
 
     const initialData = {
         id_empresa: null,
-
         id_trabajador: null,
         id_actividad: null,
         cantidad_avance: "",
@@ -33,9 +34,14 @@ const AditionalEmployeeModal = ({
         handleListEmployee(dataValue.id_empresa)
     }, [dataValue.id_empresa])
 
+    const dataCompany = processedDataCompany.body.map(body => ({
+        id: body.id,
+        nombre: body.nombre
+    }));
+
     const dataEmployee = processedDataEmployee.body.map(body => ({
         id: body.id,
-        nombre: body.nombre,
+        nombre: body.nombre
     }));
 
     const handleSubmit = (event) => {
@@ -94,7 +100,7 @@ const AditionalEmployeeModal = ({
                     Datos Generales
                 </Typography>
 
-                <Stack direction="row" gap={4} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Stack direction="row" gap={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <SelectForm
                         title={"Empresa"}
                         dataValue={dataValue}
@@ -102,7 +108,6 @@ const AditionalEmployeeModal = ({
                         isRequired
                         options={dataCompany}
                         fieldName="id_empresa"
-                        sx={{ width: '180px' }}
                     />
 
                     <SelectForm
@@ -112,7 +117,6 @@ const AditionalEmployeeModal = ({
                         isRequired
                         options={dataEmployee}
                         fieldName="id_trabajador"
-                        sx={{ width: '180px' }}
                     />
                 </Stack>
 
@@ -128,7 +132,7 @@ const AditionalEmployeeModal = ({
                     Datos de Actividad
                 </Typography>
 
-                <Stack direction="row" gap={4} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: "0px 7px 0px 7px" }}>
+                <Stack direction="row" gap={2} sx={{ justifyContent: 'center', alignItems: 'center' }}>
                     <SelectForm
                         title={"Actividad"}
                         setDataValue={setDataValue}
@@ -138,7 +142,7 @@ const AditionalEmployeeModal = ({
                         fieldName="id_actividad"
                     />
 
-                    <InputComponent
+                    <InputForm
                         title={"Cantidad de Avance"}
                         isRequired
                         setDataValue={setDataValue}
@@ -146,17 +150,22 @@ const AditionalEmployeeModal = ({
                         fieldName="cantidad_avance"
                         type="number"
                     />
-
-                    <SelectForm 
-                        title="Fecha" 
-                        setDataValue={setDataValue} 
-                        dataValue={dataValue} 
-                        isRequired
-                        options={dateOptions} 
-                        fieldName="fecha" 
-                    />
-
                 </Stack>
+
+                <Box
+                    sx={{
+                        width: "50%"
+                    }}
+                >
+                    <SelectForm
+                        title="Fecha"
+                        setDataValue={setDataValue}
+                        dataValue={dataValue}
+                        isRequired
+                        options={dateOptions}
+                        fieldName="fecha"
+                    />
+                </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4, gap: 2 }}>
                     <ButtonComponent

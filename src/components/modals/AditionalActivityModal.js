@@ -8,16 +8,23 @@ import CloseIcon from '@mui/icons-material/Close';
 import InputComponent from "../inputs/InputComponent";
 import useFilterEmployeeByCompany from "../../modules/layer1/formemployee/useFilterEmployeeByCompany";
 import { SelectForm } from "../../modules/layer1/admin/Form";
+import useFilterCompanyByWeekOfBudget from "../../modules/layer1/formactivitiessection/useFilterCompanyByWeekOfBudget";
 
 const AditionalActivityModal = ({
-    openDialog, setIsAditionalEmployeeModalOpen, setActivityCaptureData,
-    dataCompany, dataActivity, showMessage
+    openDialog, setIsAditionalEmployeeModalOpen, setActivityCaptureData, dataActivity, showMessage
 }) => {
 
     const { handleList: handleListEmployee, processedData: processedDataEmployee, error: errorEmployee } = useFilterEmployeeByCompany()
+    const { handleList: handleListCompany, processedData: processedDataCompany, error: errorCompany } = useFilterCompanyByWeekOfBudget()
+
+    useEffect(() => {
+        handleListCompany()
+    }, [])
 
     const initialData = {
         id_empresa: null,
+        id_finca: null,
+        id_area: null,
         id_trabajador: null,
         id_actividad: null,
         cantidad_avance: "",
@@ -29,6 +36,11 @@ const AditionalActivityModal = ({
     useEffect(() => {
         handleListEmployee(dataValue.id_empresa)
     }, [dataValue.id_empresa])
+
+    const dataCompany = processedDataCompany.body.map(body => ({
+        id: body.id,
+        nombre: body.nombre,
+    }));
 
     const dataEmployee = processedDataEmployee.body.map(body => ({
         id: body.id,
@@ -96,18 +108,39 @@ const AditionalActivityModal = ({
                     Datos Generales
                 </Typography>
 
-                <SelectForm
-                    title={"Empresa"}
-                    dataValue={dataValue}
-                    setDataValue={setDataValue}
-                    isRequired
-                    options={dataCompany}
-                    fieldName="id_empresa"
-                    isDisabled={false}
-                    sx={{ width: '165px' }}
-                />
+                <Stack direction="row" gap={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: '30px' }}>
+                    <SelectForm
+                        title={"Empresa"}
+                        dataValue={dataValue}
+                        setDataValue={setDataValue}
+                        isRequired
+                        options={dataCompany}
+                        fieldName="id_empresa"
+                        isDisabled={false}
+                    />
 
-                <Stack direction="row" gap={4} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: '30px' }}>
+                    <SelectForm
+                        title={"Finca"}
+                        dataValue={dataValue}
+                        setDataValue={setDataValue}
+                        isRequired
+                        options={[]}
+                        fieldName="id_finca"
+                        isDisabled={false}
+                    />
+
+                    <SelectForm
+                        title={"Area"}
+                        dataValue={dataValue}
+                        setDataValue={setDataValue}
+                        isRequired
+                        options={[]}
+                        fieldName="id_area"
+                        isDisabled={false}
+                    />
+                </Stack>
+
+                <Stack direction="row" gap={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: '30px' }}>
                     <SelectForm
                         title={"Empleado"}
                         dataValue={dataValue}
@@ -115,7 +148,6 @@ const AditionalActivityModal = ({
                         isRequired
                         options={dataEmployee}
                         fieldName="id_trabajador"
-                        isDisabled={false}
                     />
 
                     <SelectForm
@@ -127,7 +159,14 @@ const AditionalActivityModal = ({
                         fieldName="id_actividad"
                         isDisabled={false}
                     />
+                </Stack>
 
+                <Box
+                    sx={{
+                        width: "50%",
+                        paddingTop: 2
+                    }}
+                >
                     <InputComponent
                         title={"Unidad"}
                         isRequired
@@ -136,7 +175,7 @@ const AditionalActivityModal = ({
                         fieldName="id_unidad"
                         disabled
                     />
-                </Stack>
+                </Box>
 
                 <Typography
                     variant="body1"
@@ -150,7 +189,7 @@ const AditionalActivityModal = ({
                     Datos de Actividad
                 </Typography>
 
-                <Stack direction="row" gap={4} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Stack direction="row" gap={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
 
                     <InputComponent
                         title={"Precio"}
