@@ -26,7 +26,6 @@ const FormEmployeeDeployment = ({
 
     const { handleList: handleListEmployee, processedData: processedDataEmployee } = useFilterEmployeeByFarm();
     const { handleList: handleListActivity, processedData: processedDataActivity } = useFilterActivityByWeekFarmArea();
-    const { handleList: handleListCompany, processedData: processedDataCompany } = useCompanyList();
     const { handleList: handleListWeek, processedData: processedDataWeek, error: errorWeek } = useWeekLogList();
 
     const [isAditionalEmployeeModalOpen, setIsAditionalEmployeeModalOpen] = useState(false);
@@ -35,8 +34,7 @@ const FormEmployeeDeployment = ({
     const { snackbarOptions, setSnackbarOptions, showMessage } = useSnackbarOption();
 
     useEffect(() => {
-        handleListActivity(filterData.id_semana, filterData.id_finca, filterData.id_area); // Obteniendo las actividades 
-        handleListCompany();
+        handleListActivity(filterData.id_semana, filterData.id_finca, filterData.id_area); // Obteniendo las actividades presupuestadas
         handleListEmployee(filterData.id_finca); // Obteniendo los empleados de la finca
         handleListWeek(filterData.id_semana) // Obteniendo los datos de la semana seleccionada
     }, []);
@@ -89,11 +87,6 @@ const FormEmployeeDeployment = ({
     const dataActivity = processedDataActivity.body.map((item) => ({
         id: item.actividad.id,
         nombre: item.actividad.nombre,
-    }));
-
-    const dataCompany = processedDataCompany.body.map(body => ({
-        id: body.id,
-        nombre: body.nombre,
     }));
 
     const handleSubmit = (event) => {
@@ -183,8 +176,22 @@ const FormEmployeeDeployment = ({
                     />
                 </Stack>
             </BasicForm>
-            <AditionalEmployeeModal openDialog={isAditionalEmployeeModalOpen} setIsAditionalEmployeeModalOpen={setIsAditionalEmployeeModalOpen} dataValue={dataValue} setDataValue={setDataValue} dataCompany={dataCompany} />
-            <AditionalActivityModal openDialog={isAditionalActivityModalOpen} setIsAditionalEmployeeModalOpen={setIsAditionalActivityModalOpen} dataValue={dataValue} setDataValue={setDataValue} dataCompany={dataCompany} />
+            <AditionalEmployeeModal 
+                openDialog={isAditionalEmployeeModalOpen}
+                setIsAditionalEmployeeModalOpen={setIsAditionalEmployeeModalOpen} 
+                setActivityCaptureData={setActivityCaptureData} 
+                dataActivity={dataActivity}
+                showMessage={showMessage}
+                dateOptions={dateOptions}
+            />
+            <AditionalActivityModal 
+                openDialog={isAditionalActivityModalOpen}
+                setIsAditionalEmployeeModalOpen={setIsAditionalActivityModalOpen} 
+                setActivityCaptureData={setActivityCaptureData} 
+                dataActivity={dataActivity}
+                showMessage={showMessage}
+                dateOptions={dateOptions} 
+            />
             <SnackbarComponent snackbarOptions={snackbarOptions} setSnackbarOptions={setSnackbarOptions} />
         </>
     );

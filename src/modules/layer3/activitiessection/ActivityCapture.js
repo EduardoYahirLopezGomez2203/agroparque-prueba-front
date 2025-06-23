@@ -75,10 +75,10 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
         if (modeUpdate)
             return
 
-        const isFindDuplicate = cleanData.find(element =>
+        const isDuplicate = cleanData.find(element =>
             `${element.id_actividad}${element.id_trabajador}` === `${dataValue.id_actividad}${dataValue.id_trabajador}`
         )
-        if (isFindDuplicate) {
+        if (isDuplicate) {
             showMessage("La actividad ya fue asignada al trabajador", "warning")
             setDataValue((element) => ({
                 ...element,

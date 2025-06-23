@@ -1,21 +1,76 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, Box, Divider, Typography, Stack } from "@mui/material";
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import IconTextComponent from '../icontexts/IconTextComponent';
-import SelectComponent from "../selects/SelectComponent";
 import ButtonComponent from "../buttons/ButtonComponent";
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import InputComponent from "../inputs/InputComponent";
 import useFilterEmployeeByCompany from "../../modules/layer1/formemployee/useFilterEmployeeByCompany";
+import { InputForm, SelectForm } from "../../modules/layer1/admin/Form";
+import useCompanyList from "../../modules/layer1/formcompany/useCompanyList";
 
-const AditionalEmployeeModal = ({openDialog, setIsAditionalEmployeeModalOpen, dataValue, setDataValue, dataCompany}) => {
-    
-    const { handleList: handleListEmployee, processedData: processedDataEmployee, error: errorEmployee} = useFilterEmployeeByCompany()
+const AditionalEmployeeModal = ({
+    openDialog, setIsAditionalEmployeeModalOpen, setActivityCaptureData, dataActivity, showMessage, dateOptions
+}) => {
+
+    const { handleList: handleListEmployee, processedData: processedDataEmployee, error: errorEmployee } = useFilterEmployeeByCompany()
+    const { handleList: handleListCompany, processedData: processedDataCompany, error: errorCompany } = useCompanyList()
 
     useEffect(() => {
-        handleListEmployee(dataCompany.id)
+        handleListCompany() // Listamos todas las empresas
     }, [])
+
+    const initialData = {
+        id_empresa: null,
+        id_trabajador: null,
+        id_actividad: null,
+        cantidad_avance: "",
+        fecha: null
+    };
+
+    const [dataValue, setDataValue] = useState(initialData);
+
+    useEffect(() => {
+        handleListEmployee(dataValue.id_empresa)
+    }, [dataValue.id_empresa])
+
+    const dataCompany = processedDataCompany.body.map(body => ({
+        id: body.id,
+        nombre: body.nombre
+    }));
+
+    const dataEmployee = processedDataEmployee.body.map(body => ({
+        id: body.id,
+        nombre: body.nombre
+    }));
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+
+        // Buscar el empleado y la actividad seleccionados
+        const trabajador = dataEmployee.find(emp => emp.id === dataValue.id_trabajador);
+        const actividad = dataActivity.find(act => act.id === dataValue.id_actividad);
+
+        setActivityCaptureData(prev => [
+            ...prev,
+            {
+                trabajador: {
+                    id: dataValue.id_trabajador,
+                    nombre: trabajador.nombre
+                },
+                actividad: {
+                    id: dataValue.id_actividad,
+                    nombre: actividad.nombre
+                },
+                cantidad_avance: dataValue.cantidad_avance,
+                fecha: dataValue.fecha,
+            }
+        ]);
+
+        showMessage("Empleado adicional, añadido ¡Correctamente!", "success")
+
+        closeModal()
+    };
 
     const closeModal = () => {
         setIsAditionalEmployeeModalOpen(false);
@@ -23,7 +78,7 @@ const AditionalEmployeeModal = ({openDialog, setIsAditionalEmployeeModalOpen, da
 
     return (
         <Dialog open={openDialog} maxWidth="xs" fullWidth>
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: "15px" }}
             >
                 <IconTextComponent
@@ -33,95 +88,98 @@ const AditionalEmployeeModal = ({openDialog, setIsAditionalEmployeeModalOpen, da
             </Box>
 
             <Divider sx={{ backgroundColor: "#9AA0A8", height: "2px" }} />
-            <Box padding = "20px">
-                <Typography 
-                    variant = "body1"
-                    fontWeight = "600"
-                    color = "slateBlue"
+            <Box padding="20px">
+                <Typography
+                    variant="body1"
+                    fontWeight="600"
+                    color="slateBlue"
                     marginBottom={2}
-                    width= "100%"
+                    width="100%"
                     align="center"
-                > 
-                Datos Generales
+                >
+                    Datos Generales
                 </Typography>
 
-                <Stack direction= "row" gap = {4} sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                    <SelectComponent
+                <Stack direction="row" gap={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <SelectForm
                         title={"Empresa"}
-                        dataValue={setDataValue}
-                        value={dataValue}
+                        dataValue={dataValue}
+                        setDataValue={setDataValue}
                         isRequired
                         options={dataCompany}
                         fieldName="id_empresa"
-                        isDisabled={false}
-                        sx={{ width: '180px'}}
                     />
 
-                    <SelectComponent
+                    <SelectForm
                         title={"Empleado"}
-                        dataValue={setDataValue}
-                        value={dataValue}
+                        setDataValue={setDataValue}
+                        dataValue={dataValue}
                         isRequired
-                        options={[
-                            { id: 1, nombre: 'Empleado 1' },
-                            { id: 2, nombre: 'Empleado 2' },
-                            { id: 3, nombre: 'Empleado 3' }]}
-                        fieldName="id_empleado"
-                        isDisabled={false}
-                        sx={{ width: '180px'}}
+                        options={dataEmployee}
+                        fieldName="id_trabajador"
                     />
                 </Stack>
 
-                <Typography 
-                    variant = "body1"
-                    fontWeight = "600"
-                    color = "slateBlue"
+                <Typography
+                    variant="body1"
+                    fontWeight="600"
+                    color="slateBlue"
                     marginBottom={2}
                     marginTop={3}
-                    width= "100%"
+                    width="100%"
                     align="center"
-                > 
-                Datos de Actividad
+                >
+                    Datos de Actividad
                 </Typography>
 
-                <Stack direction= "row" gap = {4} sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', padding: "0px 7px 0px 7px"}}>
-                    <SelectComponent
+                <Stack direction="row" gap={2} sx={{ justifyContent: 'center', alignItems: 'center' }}>
+                    <SelectForm
                         title={"Actividad"}
-                        dataValue={setDataValue}
-                        value={dataValue}
+                        setDataValue={setDataValue}
+                        dataValue={dataValue}
                         isRequired
-                        options={[
-                            { id: 1, nombre: 'Actividad 1' },
-                            { id: 2, nombre: 'Actividad 2' },
-                            { id: 3, nombre: 'Actividad 3' }]}
+                        options={dataActivity}
                         fieldName="id_actividad"
-                        isDisabled={false}
                     />
 
-                    <InputComponent 
-                        title={"Cantidad de Avance"} 
+                    <InputForm
+                        title={"Cantidad de Avance"}
                         isRequired
-                        dataValue = {dataValue}
-                        setDataValue = {setDataValue}
-                        fieldName = "cantidad_avance"
+                        setDataValue={setDataValue}
+                        dataValue={dataValue}
+                        fieldName="cantidad_avance"
                         type="number"
                     />
-
                 </Stack>
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4, gap: 2 }}>
-                    <ButtonComponent 
-                        label="Aceptar" 
-                        icon={<CheckIcon />}
-                        color="primary" 
-                        onClick={() => console.log('Cargar Presupuesto')} 
+                <Box
+                    sx={{
+                        width: "50%"
+                    }}
+                >
+                    <SelectForm
+                        title="Fecha"
+                        setDataValue={setDataValue}
+                        dataValue={dataValue}
+                        isRequired
+                        options={dateOptions}
+                        fieldName="fecha"
                     />
-                    <ButtonComponent 
-                        label="Cancelar" 
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4, gap: 2 }}>
+                    <ButtonComponent
+                        label="Aceptar"
+                        icon={<CheckIcon />}
+                        color="primary"
+                        onClick={handleSubmit}
+                    />
+                    <ButtonComponent
+                        label="Cancelar"
                         icon={<CloseIcon />}
-                        color="brightRed" 
+                        color="brightRed"
                         styleButton="outlined"
-                        onClick={closeModal} 
+                        onClick={closeModal}
                     />
                 </Box>
 
