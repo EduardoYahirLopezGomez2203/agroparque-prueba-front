@@ -54,8 +54,8 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         id_presupuesto: "",
     });
     const [rowToAutorizate, setRowToAutorizate] = useState([]);
+    const [totalAccionesPendientes, setTotalAccionesPendientes] = useState(0);
     const [accionesExitosas, setAccionesExitosas] = useState([]);
-    const accionesPendientes = useRef([]);
 
     useEffect(() =>{
         if(datoBudgetCreate?.status){
@@ -108,7 +108,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     useEffect(() =>{
         if(datoBudgetUpdateCreateNewActivities?.status){
             if(datoBudgetUpdateCreateNewActivities.status === "success"){
-               setAccionesExitosas(prev => [...prev, "nuevas actividades presupuestadas"]);
+                setAccionesExitosas(prev => [...prev, "nuevas actividades presupuestadas"]);
             } 
         }
     },[datoBudgetUpdateCreateNewActivities])
@@ -118,21 +118,22 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     }, [errorBudgetUpdateCreateNewActivities])
 
     useEffect(() => {
+        console.log("total de acciones pendientes:",totalAccionesPendientes)
         if (
-            accionesPendientes.current.length > 0 &&
-            accionesExitosas.length === accionesPendientes.current.length
+            totalAccionesPendientes > 0 &&
+            accionesExitosas.length === totalAccionesPendientes
         ) {
             showAlert(
                 `ACCIONES: ${accionesExitosas.join(", ")}.`,
                 "success"
             );
-            accionesPendientes.current = [];
+            setTotalAccionesPendientes(0);
             setAccionesExitosas([]);
             setTimeout(() => {
                 onClose(true);
-            }, 4500);
+            }, 3000);
         }
-    }, [accionesExitosas]);
+    }, [accionesExitosas, totalAccionesPendientes]);
 
     useEffect(()=>{
         if(dataSecondary.id_mes){
@@ -291,11 +292,61 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     };
 
     const saveBudget = async (status) => {
-        accionesPendientes.current = [];
+        let total = 0;
+        setAccionesExitosas([]);
 
+        if (dataIdsBudgetDelete.length !== 0){
+            total++;
+        } 
+        if (updatePastBudget.length !== 0) {
+            total++;
+        }
+        if (budgetActivities.length !== 0 && isPastBudget){
+            total++;
+        }
+        if (budgetActivities.length !== 0 && !isPastBudget){
+            total++;
+        } 
+        if (
+            budgetActivities.length === 0 &&
+            updatePastBudget.length === 0 &&
+            dataIdsBudgetDelete.length === 0 &&
+            isPastBudget
+        ){
+            total++;
+        } 
+
+        setTotalAccionesPendientes(total);
+        
         if(dataIdsBudgetDelete.length !== 0){
             await handleDelete(dataIdsBudgetDelete,dataValue.id_presupuesto,status);
-            accionesPendientes.current.push("eliminar");
+            //accionesPendientes.current.push("eliminar");
+        }
+
+        if(updatePastBudget.length !== 0){
+            await handleUpdate(updatePastBudget.map(prev =>({ 
+                id_actividad: prev.id_actividad,
+                cns_detalle_actividad: prev.cns_detalle_actividad,
+                cns_detalle_presupuesto: prev.cns_detalle_presupuesto,
+                precio: prev.precio,
+                cantidad: prev.cantidad,
+                status: prev.status_actividad ? prev.status_actividad : 20
+            })),status,dataValue.id_presupuesto);
+            //accionesPendientes.current.push("actualizar");
+        }
+
+        if(budgetActivities.length !== 0 && isPastBudget){
+            await handleUpdateBudgetUpdateCreateNewActivities(budgetActivities.map(prev =>({ 
+                id_actividad: prev.id_actividad,
+                cns_detalle_actividad: prev.cns_detalle_actividad,
+                precio: prev.precio,
+                cantidad: prev.cantidad,
+                status: 20
+            })),
+                dataValue.id_presupuesto,
+                status
+            );
+            //accionesPendientes.current.push("presupuestar");
         }
 
         if(budgetActivities.length !== 0 && !isPastBudget){
@@ -311,44 +362,14 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                 dataValue.id_finca,
                 dataValue.cns_detalle_finca
             );
-            accionesPendientes.current.push("crear");
+            //accionesPendientes.current.push("crear");
         }
 
-        if(budgetActivities.length !== 0 && isPastBudget){
-            await handleUpdateBudgetUpdateCreateNewActivities(budgetActivities.map(prev =>({ 
-                id_actividad: prev.id_actividad,
-                cns_detalle_actividad: prev.cns_detalle_actividad,
-                precio: prev.precio,
-                cantidad: prev.cantidad,
-                status: 20
-            })),
-                dataValue.id_presupuesto,
-                status
-            );
-            accionesPendientes.current.push("presupuestar");
-        }
-
-        if(updatePastBudget.length !== 0){
-            await handleUpdate(updatePastBudget.map(prev =>({ 
-                id_actividad: prev.id_actividad,
-                cns_detalle_actividad: prev.cns_detalle_actividad,
-                cns_detalle_presupuesto: prev.cns_detalle_presupuesto,
-                precio: prev.precio,
-                cantidad: prev.cantidad,
-                status: prev.status_actividad ? prev.status_actividad : 20
-            })),status,dataValue.id_presupuesto);
-            accionesPendientes.current.push("actualizar");
-        }
-        
         if(budgetActivities.length === 0 && budgetActivities.length === 0 && updatePastBudget.length === 0 && dataIdsBudgetDelete.length === 0 && isPastBudget){
             await handleUpdateStatus(status, dataValue.id_presupuesto);
-            accionesPendientes.current.push("actualizar estado");
+            //accionesPendientes.current.push("actualizar estado");
         }
 
-        setAccionesExitosas([]);
-        // setTimeout(() => {
-        //     onClose(true);
-        // }, 3000);
     }
 
     const cancelValidation = () => {
@@ -518,7 +539,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             <ConfirmBudgetedActivityModal open={isConfirmBudgetedActivityModalOpen} setIsConfirmBudgetedActivityModalOpen = {setIsConfirmBudgetedActivityModalOpen} onAccept={onAcceptAutorization} onReject={onRejectAutorization} onViewFile={onViewFile}/>
             <Snackbar
                 open={alertInfo.open}
-                autoHideDuration={4500}
+                autoHideDuration={3000}
                 onClose={closeAlert}
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
             >
