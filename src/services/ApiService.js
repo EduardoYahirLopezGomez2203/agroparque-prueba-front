@@ -30,10 +30,8 @@ const ApiService = {
             if (contentType && contentType.includes("application/json")) {
                 return await response.json();
             } else if (contentType && (contentType.startsWith("image/") || contentType.includes("application/pdf") || contentType.includes("application/vnd"))) {
-                // Para imágenes, PDF, Word, Excel, etc.
                 return await response.blob();
             } else {
-                // Por si acaso, intenta texto plano
                 return await response.text();
             }
         } catch (error) {
