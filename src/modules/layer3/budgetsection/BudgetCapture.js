@@ -66,7 +66,10 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     },[datoBudgetCreate])
     
     useEffect(() => { 
-        if (errorBudgetCreate) showAlert("Ocurrio un error al registrar el presupuesto", "error") 
+        if (errorBudgetCreate){
+            showAlert("Ocurrio un error al registrar el presupuesto", "error") 
+            setTotalAccionesPendientes(prev => prev - 1);
+        }
     }, [errorBudgetCreate])
 
     useEffect(() =>{
@@ -78,7 +81,10 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     },[datoBudgetUpdate])
 
     useEffect(() => { 
-        if (errorBudgetUpdate) showAlert("Ocurrio un error al actualizar", "error") 
+        if (errorBudgetUpdate){ 
+            showAlert("Ocurrio un error al actualizar", "error")
+            setTotalAccionesPendientes(prev => prev - 1); 
+        }
     }, [errorBudgetUpdate])
 
     useEffect(() =>{
@@ -90,7 +96,10 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     },[datoBudgetDelete])
 
     useEffect(() => { 
-        if (errorBudgetDelete) showAlert("Ocurrio un error al eliminar", "error") 
+        if (errorBudgetDelete){ 
+            showAlert("Ocurrio un error al eliminar", "error")
+            setTotalAccionesPendientes(prev => prev - 1);
+        }
     }, [errorBudgetDelete])
 
     useEffect(() =>{
@@ -102,7 +111,10 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     },[datoBudgetUpdateStatus])
 
     useEffect(() => { 
-        if (errorBudgetUpdateStatus) showAlert("Ocurrio un error al actualizar el estado", "error") 
+        if (errorBudgetUpdateStatus){ 
+            showAlert("Ocurrio un error al actualizar el estado", "error")
+            setTotalAccionesPendientes(prev => prev - 1);
+        }
     }, [errorBudgetUpdateStatus])
 
     useEffect(() =>{
@@ -114,7 +126,10 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     },[datoBudgetUpdateCreateNewActivities])
 
     useEffect(() => { 
-        if (errorBudgetUpdateCreateNewActivities) showAlert("Ocurrio un error al presupuestar nuevas actividades", "error") 
+        if (errorBudgetUpdateCreateNewActivities){ 
+            showAlert("Ocurrio un error al presupuestar nuevas actividades", "error")
+            setTotalAccionesPendientes(prev => prev - 1);
+        }
     }, [errorBudgetUpdateCreateNewActivities])
 
     useEffect(() => {
