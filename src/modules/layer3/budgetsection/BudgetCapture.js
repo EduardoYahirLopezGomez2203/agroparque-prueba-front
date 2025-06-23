@@ -290,11 +290,16 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         setIsPastBudget(false);
     };
 
-    const saveBudget = (status) => {
+    const saveBudget = async (status) => {
         accionesPendientes.current = [];
 
+        if(dataIdsBudgetDelete.length !== 0){
+            await handleDelete(dataIdsBudgetDelete,dataValue.id_presupuesto,status);
+            accionesPendientes.current.push("eliminar");
+        }
+
         if(budgetActivities.length !== 0 && !isPastBudget){
-            handleCreate(budgetActivities.map(prev =>({           
+            await handleCreate(budgetActivities.map(prev =>({           
                 id_actividad: prev.id_actividad,
                 cns_detalle_actividad: prev.cns_detalle_actividad,
                 precio: prev.precio,
@@ -308,8 +313,9 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             );
             accionesPendientes.current.push("crear");
         }
+
         if(budgetActivities.length !== 0 && isPastBudget){
-            handleUpdateBudgetUpdateCreateNewActivities(budgetActivities.map(prev =>({ 
+            await handleUpdateBudgetUpdateCreateNewActivities(budgetActivities.map(prev =>({ 
                 id_actividad: prev.id_actividad,
                 cns_detalle_actividad: prev.cns_detalle_actividad,
                 precio: prev.precio,
@@ -323,7 +329,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         }
 
         if(updatePastBudget.length !== 0){
-            handleUpdate(updatePastBudget.map(prev =>({ 
+            await handleUpdate(updatePastBudget.map(prev =>({ 
                 id_actividad: prev.id_actividad,
                 cns_detalle_actividad: prev.cns_detalle_actividad,
                 cns_detalle_presupuesto: prev.cns_detalle_presupuesto,
@@ -334,13 +340,8 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             accionesPendientes.current.push("actualizar");
         }
         
-        if(dataIdsBudgetDelete.length !== 0){
-            handleDelete(dataIdsBudgetDelete,dataValue.id_presupuesto,status);
-            accionesPendientes.current.push("eliminar");
-        }
-
         if(budgetActivities.length === 0 && budgetActivities.length === 0 && updatePastBudget.length === 0 && dataIdsBudgetDelete.length === 0 && isPastBudget){
-            handleUpdateStatus(status, dataValue.id_presupuesto);
+            await handleUpdateStatus(status, dataValue.id_presupuesto);
             accionesPendientes.current.push("actualizar estado");
         }
 
