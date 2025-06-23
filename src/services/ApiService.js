@@ -1,35 +1,41 @@
 const ApiService = {
-    token: null, // Propiedad para almacenar el token
+    token: null,
 
     setToken: function (token) {
         this.token = token;
     },
 
-    consume: async function (type = "", url = "", data = {}, customHeaders = {}) { //MODIFICACIÓN: Se agregó para añadir parámetros de los headers para añadir valores al findby
-
+    consume: async function (type = "", url = "", data = {}, customHeaders = {}) {
         try {
-            // Default options are marked with *
             const response = await fetch(url, {
-                method: type, // *GET, POST, PUT, DELETE, etc.
-                mode: "cors", // no-cors, *cors, same-origin
-                cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-                credentials: url.includes("beeceptor") ? "same-origin" : "include", // include, *same-origin, omit
+                method: type,
+                mode: "cors",
+                cache: "no-cache",
+                credentials: url.includes("beeceptor") ? "same-origin" : "include",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: this.token ? `Bearer ${this.token}` : "",
-                    ...customHeaders //MODIFICACIÓN: Aquí se utiliza los customHeaders para la sección de los parámetros
+                    ...customHeaders
                 },
-                redirect: "manual", // manual, *follow, error
-                referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-                body: type === "GET" ? undefined : JSON.stringify(data), // body data type must match "Content-Type" header
+                redirect: "manual",
+                referrerPolicy: "no-referrer",
+                body: type === "GET" ? undefined : JSON.stringify(data),
             });
 
             if (!response.ok) {
                 throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
 
-            return response.json(); // parses JSON response into native JavaScript objects
-
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return await response.json();
+            } else if (contentType && (contentType.startsWith("image/") || contentType.includes("application/pdf") || contentType.includes("application/vnd"))) {
+                // Para imágenes, PDF, Word, Excel, etc.
+                return await response.blob();
+            } else {
+                // Por si acaso, intenta texto plano
+                return await response.text();
+            }
         } catch (error) {
             throw error;
         }
