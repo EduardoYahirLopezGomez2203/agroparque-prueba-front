@@ -61,8 +61,11 @@ const FormBudget = ({ dataValue, setDataValue, dataTable, setDataTable, isUpdate
         event.preventDefault();
         if(dataValue.status_presupuesto === "10"){
             const alreadyExists = dataTable.some(
-                item => item.id_actividad === dataValue.id_actividad
+                item => String(item.id_actividad) === String(dataValue.id_actividad)
             );
+            console.log("Actividades en dataTable:", dataTable.map(item => item.id_actividad));
+            console.log("Actividad seleccionada en dataValue:", dataValue.id_actividad);
+            console.log("Estado de filtro:",alreadyExists)
             if (!alreadyExists || isUpdate){
                 if(!isUpdate && !dataValue.isPastBudget){
                     handleAddBudgetActivity();
