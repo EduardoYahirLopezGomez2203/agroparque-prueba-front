@@ -7,11 +7,14 @@ import useEmploymentList from '../modules/layer1/formemployment/useEmploymentLis
 import { useEffect, useState, useRef } from 'react';
 import useEmploymentUpdate from '../modules/layer1/formemployment/useEmploymentUpdate';
 import useEmploymentDelete from '../modules/layer1/formemployment/useEmploymentDelete';
+import SnackbarComponent from '../components/snackbar/SnackbarComponent';
+import useSnackbarOption from '../hooks/useSnackbarOption';
 
 const EmploymentPage = () => {
     const { handleList, processedData, cargando, error } = useEmploymentList();
     const { handleUpdate, datos: updateResponse } = useEmploymentUpdate();
     const { handleDelete } = useEmploymentDelete();
+    const { snackbarOptions, setSnackbarOptions, showMessage } = useSnackbarOption()
 
     const [id, setId] = useState(0);
     const [updateData, setUpdateData] = useState({});
@@ -33,6 +36,10 @@ const EmploymentPage = () => {
     }, [handleList]);
 
     useEffect(() => {
+        if (idDelete === 1) {
+            showMessage("No se puede eliminar Jefe de Área")
+            return
+        }
         if (idDelete !== 0) {
             handleDelete(idDelete);
         }
@@ -45,6 +52,13 @@ const EmploymentPage = () => {
             isFirstRender.current = false;
             return;
         }
+
+        if (id === 1) {
+            showMessage("No se puede editar Jefe de Área")
+            setId(null)
+            return
+        }
+
         if (id !== 0 && Object.keys(updateData).length > 0 && isEditableMode) {
             handleUpdate(id, updateData);
 
@@ -52,14 +66,6 @@ const EmploymentPage = () => {
             setIsUpdate(true);
         }
     }, [id, updateData]);
-
-    useEffect(() => {
-        if (id !== 0 && Object.keys(updateData).length > 0 && update) {
-            handleUpdate(id, updateData);
-            setUpdate(false);
-            setIsUpdate(false);
-        }
-    }, [update]);
 
     const tableHeaders = [
         {
@@ -75,25 +81,28 @@ const EmploymentPage = () => {
     ];
 
     return (
-        <AdminTemplate
-            title="Puestos"
-            formTitle="Registro de Puesto"
-            queryTitle="Consulta de Puesto"
-            formComponent={<FormEmployment updateData={updateData} setUpdateData={setUpdateData} isUpdate={isUpdate} setIsUpdate={setIsUpdate} setUpdate={setUpdate} responseUpdate={updateResponse} />}
-            information={{
-                header: tableHeaders,
-                body: processedData.body
-            }}
-            useTableApi={{
-                handleSearch: handleList,
-                isLoading: cargando,
-                error: error?.message
-            }}
-            setId={setId}
-            setUpdateData={setUpdateData}
-            setIdDelete={setIdDelete}
-            isUpdate={isUpdate}
-        />
+        <>
+            <AdminTemplate
+                title="Puestos"
+                formTitle="Registro de Puesto"
+                queryTitle="Consulta de Puesto"
+                formComponent={<FormEmployment updateData={updateData} setUpdateData={setUpdateData} isUpdate={isUpdate} setIsUpdate={setIsUpdate} setUpdate={setUpdate} responseUpdate={updateResponse} />}
+                information={{
+                    header: tableHeaders,
+                    body: processedData.body
+                }}
+                useTableApi={{
+                    handleSearch: handleList,
+                    isLoading: cargando,
+                    error: error?.message
+                }}
+                setId={setId}
+                setUpdateData={setUpdateData}
+                setIdDelete={setIdDelete}
+                isUpdate={isUpdate}
+            />
+            <SnackbarComponent setSnackbarOptions={setSnackbarOptions} snackbarOptions={snackbarOptions}/>
+        </>
     );
 };
 

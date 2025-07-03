@@ -16,144 +16,45 @@ import ViewComfyIcon from '@mui/icons-material/ViewComfy';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState} from 'react';
 import { Box } from '@mui/material';
 import PastBudgetModal from '../../../components/modals/PastBudgetModal';
-import useBudgetCreate from '../../layer1/formbudgetsection/useBudgetCreate';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import useBudgetUpdate from '../../layer1/formbudgetsection/useBudgetUpdate';
-import useBudgetDelete from '../../layer1/formbudgetsection/useBudgetDelete';
 import { Snackbar, Alert } from "@mui/material";
 import useSnackbarAlert from '../../layer1/formactivitymanager/useSnackbarAlert';
 import useBudgetPerMonthList from '../../layer1/formbudgetsection/useBudgetPerMonthList';
 import useActivitiesPastBudgetByBudgetList from '../../layer1/formactivities/useActivitiesPastBudgetByBudgetList';
-import useBudgetUpdateCreateNewActivities from '../../layer1/formbudgetsection/useBudgetUpdateCreateNewActivities';
-import useBudgetUpdateStatus from '../../layer1/formbudgetsection/useBudgetUpdateStatus';
 import ConfirmBudgetedActivityModal from '../../../components/modals/ConfirmBudgetedActivityModal';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import useFileByBudgetedActivityList from '../../layer1/formbudgetsection/useFileByBudgetedActivityList';
 import useFileBudgetedActivityByUrl from '../../layer1/formbudgetsection/useFileBudgetedActivityByUrl';
+import useConfirmBudgetByWeekFarmArea from '../../layer1/formbudgetsection/useConfirmBudgetByWeekFarmArea';
+import useBudgetAllActions from '../../layer1/formbudgetsection/useBudgetAllActions';
 
-const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData,dataValue, setDataValue, activeStep, setActiveStep, isPastBudget, setIsPastBudget, onClose}) => {
+const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData,dataValue, setDataValue, activeStep, setActiveStep, setIsPastBudget ,isPastBudget, onClose}) => {
     const [isPastBudgetModalOpen, setIsPastBudgetModalOpen] = useState(false);
     const [isConfirmBudgetedActivityModalOpen, setIsConfirmBudgetedActivityModalOpen] = useState(false);
-    const { handleCreate, datos: datoBudgetCreate, error: errorBudgetCreate} = useBudgetCreate();
     const { alertInfo, showAlert, closeAlert} = useSnackbarAlert();
-    const { handleUpdate, datos: datoBudgetUpdate , error: errorBudgetUpdate } = useBudgetUpdate();
-    const { handleUpdate: handleUpdateStatus, datos: datoBudgetUpdateStatus, error: errorBudgetUpdateStatus} = useBudgetUpdateStatus();
-    const { handleDelete, datos: datoBudgetDelete, error: errorBudgetDelete } = useBudgetDelete();
-    const { handleUpdate: handleUpdateBudgetUpdateCreateNewActivities, datos: datoBudgetUpdateCreateNewActivities, error: errorBudgetUpdateCreateNewActivities} = useBudgetUpdateCreateNewActivities();
     const { handleList: handleListBudgetPerMonthList, processedData: processedDataBudgetPerMonthList } = useBudgetPerMonthList();
     const { handleList: handleListActivitiesPastBudgetByBudgetList, processedData: processedDataActivitiesPastBudgetByBudgetList } = useActivitiesPastBudgetByBudgetList();
+    const { handleList: handleListActivitiesPastBudgetByBudget2List, processedData: processedDataActivitiesPastBudgetByBudget2List } = useActivitiesPastBudgetByBudgetList();
     const { handleList: handleListActivitiesPastBudgetByBudgetToPutList, processedData: processedDataActivitiesPastBudgetByBudgetToPutList } = useActivitiesPastBudgetByBudgetList();
     const { handleList: handleFileByBudgetedActivityList, processedData: processedDataFileByBudgetedActivityList} = useFileByBudgetedActivityList();
     const { handleList: handleFileBudgetedActivityByUrl, processedData } = useFileBudgetedActivityByUrl();
+    const { handleList: handleConfirmBudgetByWeekFarmArea, processedData: processedDataConfirmBudgetByWeekFarmArea} = useConfirmBudgetByWeekFarmArea();
+    const { handleCreateUpdateDelete, datos, error} = useBudgetAllActions();
 
     const [update, setUpdate] = useState(false);
-    const [updatePastBudget, setUpdatePastBudget] = useState([]);
-    const [dataIdsBudgetDelete, setDataIdsBudgetDelete] = useState([]);
-    const [budgetActivities, setBudgetActivities] = useState([]);
+    const [updatePastBudget, setUpdatePastBudget] = useState([]); //Array que contiene las actividades a actualizar
+    const [dataIdsBudgetDelete, setDataIdsBudgetDelete] = useState([]); //Array que contiene los ids de actividades a eliminar
+    const [budgetActivities, setBudgetActivities] = useState([]); //Array que contiene las actividades presupuestadas nuevas
     const [dataSecondary, setDataSecondary] = useState({
         id_mes: "",
         id_presupuesto: "",
     });
+
     const [rowToAutorizate, setRowToAutorizate] = useState([]);
-    const [totalAccionesPendientes, setTotalAccionesPendientes] = useState(0);
-    const [accionesExitosas, setAccionesExitosas] = useState([]);
-
-    useEffect(() =>{
-        if(datoBudgetCreate?.status){
-            if(datoBudgetCreate.status === "success"){
-                setAccionesExitosas(prev => [...prev, "presupuesto registrado"]);
-            }
-        }
-    },[datoBudgetCreate])
-    
-    useEffect(() => { 
-        if (errorBudgetCreate){
-            showAlert("Ocurrio un error al registrar el presupuesto", "error") 
-            setTotalAccionesPendientes(prev => prev - 1);
-        }
-    }, [errorBudgetCreate])
-
-    useEffect(() =>{
-        if(datoBudgetUpdate?.status){
-            if(datoBudgetUpdate.status === "success"){
-                setAccionesExitosas(prev => [...prev, "actualización de actividades"]);
-            } 
-        }
-    },[datoBudgetUpdate])
-
-    useEffect(() => { 
-        if (errorBudgetUpdate){ 
-            showAlert("Ocurrio un error al actualizar", "error")
-            setTotalAccionesPendientes(prev => prev - 1); 
-        }
-    }, [errorBudgetUpdate])
-
-    useEffect(() =>{
-        if(datoBudgetDelete?.status){
-            if(datoBudgetDelete.status === "success"){
-                setAccionesExitosas(prev => [...prev, "eliminación de actividades"]);
-            } 
-        }
-    },[datoBudgetDelete])
-
-    useEffect(() => { 
-        if (errorBudgetDelete){ 
-            showAlert("Ocurrio un error al eliminar", "error")
-            setTotalAccionesPendientes(prev => prev - 1);
-        }
-    }, [errorBudgetDelete])
-
-    useEffect(() =>{
-        if(datoBudgetUpdateStatus?.status){
-            if(datoBudgetUpdateStatus.status === "success"){
-                setAccionesExitosas(prev => [...prev, "actualización de estado"]);
-            } 
-        }
-    },[datoBudgetUpdateStatus])
-
-    useEffect(() => { 
-        if (errorBudgetUpdateStatus){ 
-            showAlert("Ocurrio un error al actualizar el estado", "error")
-            setTotalAccionesPendientes(prev => prev - 1);
-        }
-    }, [errorBudgetUpdateStatus])
-
-    useEffect(() =>{
-        if(datoBudgetUpdateCreateNewActivities?.status){
-            if(datoBudgetUpdateCreateNewActivities.status === "success"){
-                setAccionesExitosas(prev => [...prev, "nuevas actividades presupuestadas"]);
-            } 
-        }
-    },[datoBudgetUpdateCreateNewActivities])
-
-    useEffect(() => { 
-        if (errorBudgetUpdateCreateNewActivities){ 
-            showAlert("Ocurrio un error al presupuestar nuevas actividades", "error")
-            setTotalAccionesPendientes(prev => prev - 1);
-        }
-    }, [errorBudgetUpdateCreateNewActivities])
-
-    useEffect(() => {
-        console.log("total de acciones pendientes:",totalAccionesPendientes)
-        if (
-            totalAccionesPendientes > 0 &&
-            accionesExitosas.length === totalAccionesPendientes
-        ) {
-            showAlert(
-                `ACCIONES: ${accionesExitosas.join(", ")}.`,
-                "success"
-            );
-            setTotalAccionesPendientes(0);
-            setAccionesExitosas([]);
-            setTimeout(() => {
-                onClose(true);
-            }, 3000);
-        }
-    }, [accionesExitosas, totalAccionesPendientes]);
 
     useEffect(()=>{
         if(dataSecondary.id_mes){
@@ -188,7 +89,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     useEffect(() => {
         if (processedData && processedData.body && processedData.body.length > 0) {
             const base64Full = processedData.body[0].documento;
-            const fileName = processedData.body[0].nombre || "archivo_descargado";
+            const fileName = processedData.body[0].nombre || "archivo_de_actividad_adicional";
 
             if (base64Full.startsWith("data:")) {
                 const link = document.createElement("a");
@@ -202,7 +103,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             }
         }
     }, [processedData]);
-
         
     useEffect(() => {
         if (isPastBudget && processedDataActivitiesPastBudgetByBudgetList.body.length > 0) {
@@ -212,7 +112,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                     id_actividad: item.id_actividad,
                     cns_detalle_actividad: item.cns_detalle_actividad,
                     nombre_actividad: item.nombre_actividad,
-                    precio: item.precio,
+                    precio: item.precio_pasado,
                     cantidad: item.cantidad,
                     total: String(Number((item.precio * item.cantidad).toFixed(2))),
                     unidad: item.unidad,
@@ -224,12 +124,66 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         }
     }, [isPastBudget, processedDataActivitiesPastBudgetByBudgetList.body]);
 
+
     useEffect(() => {
         if (dataSecondary.id_presupuesto) {
             handleListActivitiesPastBudgetByBudgetToPutList(dataSecondary.id_presupuesto);
         }
     }, [dataSecondary.id_presupuesto, handleListActivitiesPastBudgetByBudgetList]);
-    
+
+    useEffect(() => {
+        if(dataValue.id_semana && dataValue.id_finca && dataValue.id_area){
+            console.log("entro al efecto de llamda de la comprobacion del presupuesto")
+            handleConfirmBudgetByWeekFarmArea(dataValue.id_semana, dataValue.id_finca, dataValue.id_area);
+        }
+    },[dataValue.id_semana, dataValue.id_finca, dataValue.id_area, handleConfirmBudgetByWeekFarmArea]);
+
+    useEffect(() => {
+        console.log("ento al efecto para setear a la tabla: ",processedDataActivitiesPastBudgetByBudget2List);
+        if (processedDataActivitiesPastBudgetByBudget2List.body.length > 0) {
+            setDataTable(
+                processedDataActivitiesPastBudgetByBudget2List.body.map(item => ({
+                    id: item.id,
+                    id_actividad: item.id_actividad,
+                    cns_detalle_actividad: item.cns_detalle_actividad,
+                    nombre_actividad: item.nombre_actividad,
+                    precio: item.precio_pasado,
+                    cantidad: item.cantidad,
+                    total: String(Number((item.precio * item.cantidad).toFixed(2))),
+                    unidad: item.unidad,
+                    cns_detalle_presupuesto: item.cns_detalle_presupuesto,
+                    status_actividad: item.status_actividad,
+                    isPastBudget: true,
+                }))
+            );
+            setIsPastBudget(true);
+        }
+    }, [processedDataActivitiesPastBudgetByBudget2List.body]);
+
+    useEffect(()=>{
+        if(datos){
+            if(datos.status === "success"){
+                showAlert(`Acción realizada.`,"success");
+                setTimeout(() => {
+                    onClose(true);
+                },2500)
+            }
+        }
+    },[datos]);
+
+    useEffect(() => { 
+        if (error){ 
+            if (dataValue?.status_presupuesto === "25") {
+               showAlert(`No se pudo finalizar el presupuesto. Es posible que falte verificar alguna actividad adicional.`, "error");
+            } else {
+                showAlert(`Hubo algun error al realizar la acción.`,"error");
+            }
+            setTimeout(() => {
+                onClose(true);
+            },2500)
+        }
+    }, [error]);
+
     const handleNext = () => {
         setActiveStep((prev) => prev + 1);
     };
@@ -287,13 +241,44 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         setIsPastBudget(false);
     };
 
+    const verifPastBudgetIfExist = processedDataConfirmBudgetByWeekFarmArea.body.map(item => ({
+        item,
+        id_presupuesto: item?.id_presupuesto ?? null,
+        cns_detalle_finca: item?.detalle_finca.id,
+        status: item?.status ?? null,
+    }));
+
+
     const firstValidation = () => {
-        if(dataValue.id_semana !== "" && dataValue.id_empresa !== "" && dataValue.id_finca !== "" && dataValue.id_area !== ""){
-            handleNext();
+        
+        const todosSonNull = verifPastBudgetIfExist.every(item => item === null);
+        const statusFinally =  verifPastBudgetIfExist.every(item => String(item?.status.id) !== "10");
+
+        if (todosSonNull) {
+            if (
+            dataValue.id_semana !== "" &&
+            dataValue.id_empresa !== "" &&
+            dataValue.id_finca !== "" &&
+            dataValue.id_area !== ""
+            ) {
+                handleNext();
+            } else {
+                showAlert("Completa los campos: semana, empresa, finca y área.", "warning");
+            }
+        } else if(statusFinally) {
+            showAlert("Los datos ya estan en un presupuesto finalizado, elige otros.", "warning");
         } else {
-            showAlert("Completa los campos: semana, empresa, finca y área.", "warning");
+            console.log("respuesta del presupuesto encontrado: "+ verifPastBudgetIfExist);
+            setDataValue(prev => ({
+                ...prev,
+                id_presupuesto: verifPastBudgetIfExist[0].id_presupuesto || "",
+                cns_detalle_finca: verifPastBudgetIfExist[0]?.cns_detalle_finca || "",
+            }));
+            handleListActivitiesPastBudgetByBudget2List(verifPastBudgetIfExist[0]?.id_presupuesto);
+            handleNext();
         }
     };
+
 
     const secondValidation = () => {
         if(budgetActivities.length !== 0 || dataIdsBudgetDelete.length !== 0 || updatePastBudget.length !== 0 || (isPastBudget && dataValue.status_presupuesto !== "11")){
@@ -313,7 +298,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
 
     const finallyValidation = () => {
         saveBudget(11);
-        setDataValue(initialData);
         setDataTable([]);
         setBudgetActivities([]);
         setUpdatePastBudget([]);
@@ -325,8 +309,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             id_mes: "",
             id_presupuesto: "",
         });
-        // setActiveStep(0);
-        // setActiveComponent('default');
         setIsPastBudget(false);
     };
 
@@ -343,91 +325,54 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             id_mes: "",
             id_presupuesto: "",
         });
-        // setActiveStep(0);
-        // setActiveComponent('default');
         setIsPastBudget(false);
     };
 
     const saveBudget = async (status) => {
-        let total = 0;
-        setAccionesExitosas([]);
+        const activities = {
+            elementos: [
+                ...budgetActivities.map(item => ({
+                    id_actividad: item.id_actividad,
+                    cns_detalle_actividad: item.cns_detalle_actividad,
+                    precio: item.precio,
+                    cantidad: item.cantidad,
+                    cns_detalle_presupuesto: item.cns_detalle_presupuesto,
+                    status: 20,
+                    operacion: 1,
+                })),
+                ...updatePastBudget.map(item => ({
+                    id_actividad: item.id_actividad,
+                    cns_detalle_actividad: item.cns_detalle_actividad,
+                    precio: item.precio,
+                    cantidad: item.cantidad,
+                    cns_detalle_presupuesto: item.cns_detalle_presupuesto,
+                    status: item?.status_actividad || 20,
+                    operacion: 2,
+                })),
+                ...dataIdsBudgetDelete.map(id => ({
+                    cns_detalle_presupuesto: id,
+                    cns_detalle_actividad: 1,
+                    id_actividad: 1,
+                    status: 20,
+                    cantidad: 1,
+                    precio: 1,
+                    operacion: 3,
+                }))
+            ]
+        };
 
-        if (dataIdsBudgetDelete.length !== 0){
-            total++;
-        } 
-        if (updatePastBudget.length !== 0) {
-            total++;
-        }
-        if (budgetActivities.length !== 0 && isPastBudget){
-            total++;
-        }
-        if (budgetActivities.length !== 0 && !isPastBudget){
-            total++;
-        } 
-        if (
-            budgetActivities.length === 0 &&
-            updatePastBudget.length === 0 &&
-            dataIdsBudgetDelete.length === 0 &&
-            isPastBudget
-        ){
-            total++;
-        } 
+        console.log("Actividades a enviar al endpoint:", activities);
 
-        setTotalAccionesPendientes(total);
-        
-        if(dataIdsBudgetDelete.length !== 0){
-            await handleDelete(dataIdsBudgetDelete,dataValue.id_presupuesto,status);
-            //accionesPendientes.current.push("eliminar");
-        }
-
-        if(updatePastBudget.length !== 0){
-            await handleUpdate(updatePastBudget.map(prev =>({ 
-                id_actividad: prev.id_actividad,
-                cns_detalle_actividad: prev.cns_detalle_actividad,
-                cns_detalle_presupuesto: prev.cns_detalle_presupuesto,
-                precio: prev.precio,
-                cantidad: prev.cantidad,
-                status: prev.status_actividad ? prev.status_actividad : 20
-            })),status,dataValue.id_presupuesto);
-            //accionesPendientes.current.push("actualizar");
-        }
-
-        if(budgetActivities.length !== 0 && isPastBudget){
-            await handleUpdateBudgetUpdateCreateNewActivities(budgetActivities.map(prev =>({ 
-                id_actividad: prev.id_actividad,
-                cns_detalle_actividad: prev.cns_detalle_actividad,
-                precio: prev.precio,
-                cantidad: prev.cantidad,
-                status: 20
-            })),
-                dataValue.id_presupuesto,
-                status
-            );
-            //accionesPendientes.current.push("presupuestar");
-        }
-
-        if(budgetActivities.length !== 0 && !isPastBudget){
-            await handleCreate(budgetActivities.map(prev =>({           
-                id_actividad: prev.id_actividad,
-                cns_detalle_actividad: prev.cns_detalle_actividad,
-                precio: prev.precio,
-                cantidad: prev.cantidad,
-                status: 20 
-            })),
-                status,
-                dataValue.id_semana,
-                dataValue.id_finca,
-                dataValue.cns_detalle_finca
-            );
-            //accionesPendientes.current.push("crear");
-        }
-
-        if(budgetActivities.length === 0 && budgetActivities.length === 0 && updatePastBudget.length === 0 && dataIdsBudgetDelete.length === 0 && isPastBudget){
-            await handleUpdateStatus(status, dataValue.id_presupuesto);
-            //accionesPendientes.current.push("actualizar estado");
-        }
-
-    }
+        // Envío al backend
+        await handleCreateUpdateDelete(
+            activities,
+            dataValue?.id_presupuesto || "0",
+            status,
+            dataValue.id_semana,
+            dataValue.id_finca,
+            dataValue.cns_detalle_finca
+        );
+    };
 
     const cancelValidation = () => {
         setActiveStep(0);
@@ -447,7 +392,6 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
         setActiveComponent('default'); //Logica de validacion para el paso Cancelar
         return false;
     };
-
 
     const steps = [
         {
@@ -481,7 +425,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                     onClick={handleSecondBack}
                     label='Anterior'
                 />,
-                (dataValue.status_presupuesto === "10" && <ButtonComponent
+                ((dataValue.status_presupuesto === "10") && <ButtonComponent
                     styleButton="contained"
                     onClick={handleOpenPastBudgetModal}
                     label='Visualizar Presupuesto Pasado'
@@ -491,7 +435,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
                         justifyContent: 'center',
                         alignItems: 'center',   }}
                 />),
-                (dataValue.status_presupuesto === "10" &&<ButtonComponent
+                ((dataValue.status_presupuesto === "10" || dataValue.status_presupuesto === "25") &&<ButtonComponent
                     rightIcon={<ArrowForwardIcon />}
                     styleButton="contained"
                     color="strongGreen"
@@ -584,18 +528,22 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
     }));
     
 
-    const dataActivityByBudgetToPut = processedDataActivitiesPastBudgetByBudgetToPutList.body.map(item => ({
+    const dataActivityByBudgetToPut = processedDataActivitiesPastBudgetByBudgetToPutList.body
+    .filter(item => String(item.status_actividad) === "20")
+    .map(item => ({
         id: item.id,
         id_actividad: item.id_actividad,
         cns_detalle_actividad: item.cns_detalle_actividad,
         cns_detalle_finca: item.cns_detalle_finca,
         nombre_actividad: item.nombre_actividad,
+        precio_pasado: item.precio_pasado,
         precio: item.precio,
         cantidad: item.cantidad,
         total: String(Number((item.precio * item.cantidad).toFixed(2))),
         unidad: item.unidad,
         presupuesto: item.presupuesto,
         isPastBudget: false,
+        status_actividad: item.status_actividad,
     }));
 
     return (
@@ -605,7 +553,7 @@ const BudgetCapture = ({setActiveComponent, dataTable, setDataTable, initialData
             <ConfirmBudgetedActivityModal open={isConfirmBudgetedActivityModalOpen} setIsConfirmBudgetedActivityModalOpen = {setIsConfirmBudgetedActivityModalOpen} onAccept={onAcceptAutorization} onReject={onRejectAutorization} onViewFile={onViewFile}/>
             <Snackbar
                 open={alertInfo.open}
-                autoHideDuration={3000}
+                autoHideDuration={2500}
                 onClose={closeAlert}
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
             >
@@ -691,13 +639,12 @@ const Budget =({dataValue, setDataValue, dataTable, setDataTable, setUpdate, upd
                                 icon: <EditIcon color="slateBlue" />,
                                 text: "Editar",
                                 onClick: (row) => {
-                                    if(dataValue.status_presupuesto === "10"){
+                                    if(dataValue.status_presupuesto === "10" || dataValue.status_presupuesto === "22"){
                                         setDataValue({
                                             ...dataValue,
                                             id: row.id,
                                             id_actividad: row.id_actividad,
                                             cns_detalle_actividad: row.cns_detalle_actividad,
-                                            cns_detalle_finca: row.cns_detalle_finca,
                                             cns_detalle_presupuesto: row.cns_detalle_presupuesto,
                                             nombre_actividad: row.nombre_actividad,
                                             unidad: row.unidad,
@@ -715,15 +662,15 @@ const Budget =({dataValue, setDataValue, dataTable, setDataTable, setUpdate, upd
                                 icon: <VpnKeyIcon color="slateBlue" sx={{ transform: 'rotate(-45deg)' }}/>,
                                 text: "Modificar autorización",
                                 onClick: (row) => {
-                                    if(dataValue.status_presupuesto === "10"){
-                                        if(String(row.status_actividad) !== "23" && String(row.status_actividad) !== "24" && String(row.status_actividad) !== "20" && row.isPastBudget){
+                                    if(dataValue.status_presupuesto === "25"){
+                                        if((String(row.status_actividad) === "25" || String(row.status_actividad) === "23" || String(row.status_actividad) === "24") && row.isPastBudget){
                                                 setRowToAutorizate(row);
                                                 setIsConfirmBudgetedActivityModalOpen(true);
                                         } else {
                                             showAlert("La autorización no puede ser modificada, ya que no es una actividad adicional.", "warning");
                                         }
                                     } else {
-                                        showAlert("No es posible modificar la autorización, ya que el presupuesto ha sido finalizado.", "warning");
+                                        showAlert("No es posible modificar la autorización, ya que el presupuesto no esta en estado de actividades adicionales creadas.", "warning");
                                     }
                                 }
                             })

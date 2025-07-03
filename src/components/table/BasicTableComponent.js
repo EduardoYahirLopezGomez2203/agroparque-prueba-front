@@ -33,6 +33,33 @@ const RedBadge = styled(Badge)(({ theme }) => ({
     },
 }));
 
+const GreenBadge = styled(Badge)(({ theme }) => ({
+    '& .MuiBadge-badge': {
+        backgroundColor: '#28a745', // verdecito
+        color: '#28a745',
+        fontSize: 18,
+        top: 8,
+        right: -8,
+        minWidth: 5,
+        height: 5,
+        borderRadius: '50%',
+    },
+}));
+
+const GrayBadge = styled(Badge)(({ theme }) => ({
+    '& .MuiBadge-badge': {
+        backgroundColor: '#6c757d', // grisecito
+        color: '#6c757d',
+        fontSize: 18,
+        top: 8,
+        right: -8,
+        minWidth: 5,
+        height: 5,
+        borderRadius: '50%',
+    },
+}));
+
+
 const BasicTableComponent = ({
     information = { header: [], body: [{ hiddenMenuRow: false }] }, showMenuColumn = true,
     items = [{ icon: <></>, text: "", onClick: (element) => { } }], isPastBudget = false
@@ -48,7 +75,7 @@ const BasicTableComponent = ({
 
     // Filtrado solo si isPastBudget y filtro en "adicionales"
     const filteredTableData = isPastBudget && filter === "adicionales"
-        ? tableData.filter(row => row.status_actividad === 22)
+        ? tableData.filter(row => String(row.status_actividad) === "25" || String(row.status_actividad) === "23" || String(row.status_actividad) === "24")
         : tableData;
 
     const numberPages = Math.max(Math.ceil(filteredTableData.length / rowsPerPage), 1);
@@ -75,18 +102,50 @@ const BasicTableComponent = ({
                             <TableRow key={row.id}>
                                 {information.header.map((column) => (
                                     <TableCell key={column.id} sx={{ color: "#495361", fontWeight: 400 }}>
-                                        {isPastBudget && column.id === "nombre_actividad" && row.status_actividad === 22 ? (
-                                            <RedBadge
-                                                variant="dot"
-                                                overlap="circular"
-                                                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                                                badgeContent="*"
-                                            >
-                                                <span>{row[column.id] || "N/A"}</span>
-                                            </RedBadge>
-                                        ) : (
-                                            row[column.id] || "N/A"
+                                        {isPastBudget && column.id === "nombre_actividad" ? (() => {
+                                            const status = String(row.status_actividad);
+                                            const content = <span>{row[column.id] ?? "N/A"}</span>;
+
+                                            if (status === "25") {
+                                                return (
+                                                    <RedBadge
+                                                        variant="dot"
+                                                        overlap="circular"
+                                                        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                                        badgeContent="*"
+                                                    >
+                                                        {content}
+                                                    </RedBadge>
+                                                );
+                                            } else if (status === "24") {
+                                                return (
+                                                    <GreenBadge
+                                                        variant="dot"
+                                                        overlap="circular"
+                                                        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                                        badgeContent="*"
+                                                    >
+                                                        {content}
+                                                    </GreenBadge>
+                                                );
+                                            } else if (status === "23") {
+                                                return (
+                                                    <GrayBadge
+                                                        variant="dot"
+                                                        overlap="circular"
+                                                        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                                        badgeContent="*"
+                                                    >
+                                                        {content}
+                                                    </GrayBadge>
+                                                );
+                                            } else {
+                                                return content;
+                                            }
+                                        })() : (
+                                            row[column.id] ?? "N/A"
                                         )}
+
                                     </TableCell>
                                 ))}
 

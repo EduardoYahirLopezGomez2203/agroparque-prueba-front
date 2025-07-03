@@ -18,17 +18,22 @@ import {
     Collapse,
     Box,
 } from "@mui/material";
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import GrassOutlinedIcon from '@mui/icons-material/GrassOutlined';
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import IconTextComponent from "../icontexts/IconTextComponent";
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import useFarmDetailList from '../../modules/layer1/formfarm/useFarmDetailList';
 
 // La estructura del header = {id, text, icon}
+// Necesita refactorizarse, se metió la llamada dentro del componente por tiempo
 const AccordionTableComponent = ({
-    information = { header: [], body: [] }, isLoading = false, error = null, setId, setUpdateData, setIdDelete,
-    showAccordion = true
+    information = { header: [], body: [] }, isLoading = false,
+    error = null, setId, setUpdateData, setIdDelete, showAccordion = true,
+    //searchInformation = (id) => ({ header: [], body: [] })
 }) => {
     const [tableData, setTableData] = useState([]);
     const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -57,7 +62,73 @@ const AccordionTableComponent = ({
 
     const RowAccordion = ({ row, column }) => {
 
+        const { handleList: handleListDetail, processedData: processedDataDetail, error } = useFarmDetailList()
+
+        const headerAditionalInformation = [
+            {
+                id: 'jefe_area',
+                text: 'Jefe de Área',
+                icon: <GrassOutlinedIcon sx={{ color: 'slateBlue' }} />
+            },
+            {
+                id: 'area',
+                text: 'Área',
+                icon: <BusinessOutlinedIcon sx={{ color: 'slateBlue' }} />
+            },
+        ]
+
         const [open, setOpen] = useState(false);
+
+        const [selectedRow, setSelectedRow] = useState(null)
+
+        const [aditionalInformation, setAditionalInformation] = useState({ header: [], body: [] });
+
+        useEffect(() => {
+            if (open && selectedRow) {
+                handleListDetail(selectedRow)
+            }
+        }, [open, selectedRow])
+
+        useEffect(() => {
+            if (!error) {
+                setAditionalInformation(processedDataDetail.body.map(element => ({
+                    id: element.id,
+                    jefe_area: element.jefe_area.nombre ?? "No hay jefe de área asignado",
+                    area: element.area.nombre
+                })))
+            }
+        }, [processedDataDetail])
+
+        const handleClickRow = (id) => {
+            setOpen(!open)
+            setSelectedRow(id)
+        }
+
+        const AccordionTable = () => (
+            <Table size="small">
+                <TableHead>
+                    <TableRow>
+                        {headerAditionalInformation.map((element, index) => (
+                            <TableCell key={index} sx={{ fontWeight: 600, color: "#495361" }}>
+                                <IconTextComponent icon={element.icon} text={element.text} />
+                            </TableCell>
+                        ))}
+                    </TableRow>
+                </TableHead>
+
+                <TableBody>
+                    {aditionalInformation.map((row) => (
+                        <TableRow key={row.id}>
+                            {headerAditionalInformation.map((column) => (
+                                <TableCell key={column.id} sx={{ color: "#495361", fontWeight: 400 }}>
+                                    {row[column.id] ?? "N/A"}
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        )
 
         return (
             <>
@@ -67,7 +138,7 @@ const AccordionTableComponent = ({
                             <IconButton
                                 sx={{ bgcolor: "#D9D9D9", borderRadius: "5px" }}
                                 size="small"
-                                onClick={() => setOpen(!open)}
+                                onClick={() => handleClickRow(row.id)}
                             >
                                 {open ? <KeyboardArrowUpIcon fontSize="small" color="slateBlue" /> : <KeyboardArrowDownIcon fontSize="small" color="slateBlue" />}
                             </IconButton>
@@ -76,7 +147,7 @@ const AccordionTableComponent = ({
 
                     {column.map((column) => (
                         <TableCell key={column.id} sx={{ color: "#495361", fontWeight: 400 }}>
-                            <span>{row[column.id] || "N/A"}</span>
+                            <span>{row[column.id] ?? "N/A"}</span>
                         </TableCell>
                     ))}
 
@@ -93,17 +164,8 @@ const AccordionTableComponent = ({
                                     <Typography variant="h6" gutterBottom>
                                         Detalle
                                     </Typography>
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow>
 
-                                            </TableRow>
-                                        </TableHead>
-
-                                        <TableBody>
-
-                                        </TableBody>
-                                    </Table>
+                                    <AccordionTable />
                                 </Box>
                             </Collapse>
                         </TableCell>
@@ -121,7 +183,7 @@ const AccordionTableComponent = ({
                         <TableRow>
                             {showAccordion && <TableCell></TableCell>}
                             {information.header.map((element, index) => (
-                                <TableCell key={index} sx={{ fontWeight: 600, color: "#495361" }}>
+                                <TableCell key={element.id} sx={{ fontWeight: 600, color: "#495361" }}>
                                     <IconTextComponent icon={element.icon} text={element.text} />
                                 </TableCell>
                             ))}
@@ -130,7 +192,7 @@ const AccordionTableComponent = ({
                     </TableHead>
                     <TableBody>
                         {informationPerPage.map((row) => (
-                            <RowAccordion row={row} column={information.header} />
+                            <RowAccordion key={row.id} row={row} column={information.header} />
                         ))}
                     </TableBody>
                 </Table>

@@ -1,5 +1,4 @@
 import FormFarm from '../modules/layer1/formfarm/FormFarm';
-import FormActivityManagement from '../modules/layer1/formfarm/FormActivityManagement';
 import GrassOutlinedIcon from '@mui/icons-material/GrassOutlined';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
 import SmartphoneRoundedIcon from '@mui/icons-material/SmartphoneRounded';
@@ -7,8 +6,6 @@ import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import useFarmList from '../modules/layer1/formfarm/useFarmList';
 import { Divider } from '@mui/material';
-import EventIcon from '@mui/icons-material/Event';
-import AccordionComponent from '../components/accordions/AccordionComponent';
 import ActivityManager from '../modules/layer3/catchmanagementactivity/ActivityManager';
 import { useEffect, useState, useRef } from 'react';
 import useFarmUpdate from '../modules/layer1/formfarm/useFarmUpdate';
@@ -20,11 +17,12 @@ import AdminTemplateCustom from '../modules/layer2/admintemplate/AdminTemplateCu
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ParkIcon from '@mui/icons-material/Park';
+import NaturalAccordionComponent from '../components/accordions/NaturalAccordionComponent';
 
 const FarmPage = () => {
     const { handleList, processedData, cargando, error } = useFarmList();
     const { handleDelete, datos: dataDelete } = useFarmDelete();
-
+    
     const { handleUpdate, datos: updateResponse } = useFarmUpdate();
     const [id, setId] = useState(0);
     const [updateData, setUpdateData] = useState({});
@@ -49,18 +47,6 @@ const FarmPage = () => {
     const [update, setUpdate] = useState(false);
 
     const [showAccordionTable, setShowAccordionTable] = useState(false)
-
-    const steps = ['Filtros', 'Captura', 'Cierre'];
-    const components = [
-        () => <FormActivityManagement
-            updateData={updateData}
-            setUpdateData={setUpdateData}
-            isUpdate={isUpdate}
-            setIsUpdate={setIsUpdate}
-            setUpdate={setUpdate}
-            responseUpdate={updateResponse}
-        />, //se agregan mas coponenetes a la lista si es necesario
-    ];
 
     // ADICIÓN: Carga inicial al montar el componente
     useEffect(() => {
@@ -101,6 +87,38 @@ const FarmPage = () => {
         }
     }, [update]);
 
+    const [expandedFarm, setExpandedFarm] = useState(false)
+    const [expandedActivity, setExpandedActivity] = useState(false)
+
+    useEffect(() => {
+        if (closeActivity) {
+            setCloseActivity(false)
+            setExpandedActivity(false)
+        }
+    }, [closeActivity])
+
+    useEffect(() => {
+        if (expandedActivity) {
+            setExpandedFarm(false)
+        } else if (expandedFarm) {
+            setExpandedActivity(false)
+        }
+     }, [expandedActivity])
+
+     useEffect(() => {
+        if (expandedFarm) {
+            setExpandedActivity(false)
+        }
+     }, [expandedFarm])
+
+    const handleChangeFarm = (expanded) => {
+        setExpandedFarm(expanded)
+    }
+
+    const handleChangeActivity = (expanded) => {
+        setExpandedActivity(expanded)
+    }
+
     const tableHeaders = [
         {
             id: 'nombre',
@@ -138,8 +156,10 @@ const FarmPage = () => {
         <>
             <Header text="Fincas" />
 
-            <AccordionComponent
+            <NaturalAccordionComponent
                 title="Registro de Finca"
+                expanded={expandedFarm}
+                onChange={handleChangeFarm}
                 icon={<GrassOutlinedIcon fontSize="large" color="slateBlue" />}
                 disableHiddenTitle
             >
@@ -185,20 +205,21 @@ const FarmPage = () => {
                     isEditableMode={isEditableMode}
                     isUpdate={isUpdate}
                 />
-            </AccordionComponent>
+            </NaturalAccordionComponent>
 
-            <Divider/>
-            
-            <AccordionComponent
+            <Divider />
+
+            <NaturalAccordionComponent
                 disableHiddenTitle
-                close={closeActivity}
+                expanded={expandedActivity}
+                onChange={handleChangeActivity}
                 title="Gestión de Actividades"
                 icon={<ParkIcon fontSize='large' color='slateBlue' />}
             >
                 <ActivityManager onClose={setCloseActivity} />
-            </AccordionComponent>
+            </NaturalAccordionComponent>
 
-            <Divider/>
+            <Divider />
         </>
     );
 };

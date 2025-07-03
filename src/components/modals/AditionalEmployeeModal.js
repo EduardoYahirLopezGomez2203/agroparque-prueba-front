@@ -10,7 +10,7 @@ import { InputForm, SelectForm } from "../../modules/layer1/admin/Form";
 import useCompanyList from "../../modules/layer1/formcompany/useCompanyList";
 
 const AditionalEmployeeModal = ({
-    openDialog, setIsAditionalEmployeeModalOpen, setActivityCaptureData, dataActivity, showMessage, dateOptions
+    openDialog, setIsAditionalEmployeeModalOpen, setActivityCaptureData, dataActivity, showMessage, dateOptions, filterData
 }) => {
 
     const { handleList: handleListEmployee, processedData: processedDataEmployee, error: errorEmployee } = useFilterEmployeeByCompany()
@@ -31,13 +31,16 @@ const AditionalEmployeeModal = ({
     const [dataValue, setDataValue] = useState(initialData);
 
     useEffect(() => {
-        handleListEmployee(dataValue.id_empresa)
+        if (dataValue.id_empresa)
+            handleListEmployee(dataValue.id_empresa)
     }, [dataValue.id_empresa])
 
-    const dataCompany = processedDataCompany.body.map(body => ({
-        id: body.id,
-        nombre: body.nombre
-    }));
+    const dataCompany = processedDataCompany.body
+        .filter(element => element.id !== filterData?.id_empresa)
+        .map(body => ({
+            id: body.id,
+            nombre: body.nombre
+        }));
 
     const dataEmployee = processedDataEmployee.body.map(body => ({
         id: body.id,
@@ -64,6 +67,7 @@ const AditionalEmployeeModal = ({
                 },
                 cantidad_avance: dataValue.cantidad_avance,
                 fecha: dataValue.fecha,
+                operacion: 1
             }
         ]);
 
@@ -79,7 +83,8 @@ const AditionalEmployeeModal = ({
     return (
         <Dialog open={openDialog} maxWidth="xs" fullWidth>
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: "15px" }}
+            <Box
+                sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: "15px" }}
             >
                 <IconTextComponent
                     text={"Empleados Adicionales"}
@@ -88,7 +93,10 @@ const AditionalEmployeeModal = ({
             </Box>
 
             <Divider sx={{ backgroundColor: "#9AA0A8", height: "2px" }} />
-            <Box padding="20px">
+            <Box padding="20px"
+                component="form"
+                onSubmit={handleSubmit}
+            >
                 <Typography
                     variant="body1"
                     fontWeight="600"
@@ -170,9 +178,9 @@ const AditionalEmployeeModal = ({
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4, gap: 2 }}>
                     <ButtonComponent
                         label="Aceptar"
+                        typeButton="submit"
                         icon={<CheckIcon />}
                         color="primary"
-                        onClick={handleSubmit}
                     />
                     <ButtonComponent
                         label="Cancelar"

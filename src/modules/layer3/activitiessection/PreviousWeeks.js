@@ -12,10 +12,12 @@ import DinamicTableComponent from "../../../components/table/DinamicTableCompone
 import Visibility from '@mui/icons-material/Visibility';
 import { useEffect, useState } from "react";
 import useBudgetCurrentYearList from "../../layer1/formbudgetsection/useBudgetCurrentYearList";
+import ActivityCapture from "./ActivityCapture";
 
-const PreviousWeeks = ({ setActiveComponent }) => {
+const PreviousWeeks = ({ setActiveComponent, onClose }) => {
 
     const { handleList, processedData, error } = useBudgetCurrentYearList()
+    const [isShowInformationRow, setIsShowInformationRow] = useState(false)
 
     useEffect(() => {
         handleList()
@@ -31,21 +33,43 @@ const PreviousWeeks = ({ setActiveComponent }) => {
         setInformation(processedData.body.map(element => ({
             ...element,
             area: element.detalle_finca.area.nombre,
+            id_semana: element.semana.id,
             empresa: element.detalle_finca.finca.empresa.nombre,
             finca: element.detalle_finca.finca.nombre,
             presupuesto: element.presupuesto,
             semana: `Semana ${element.semana.numero_semana}`,
             status: element.status.nombre
         })))
-        
+
     }, [processedData, error])
 
-    const Back = () => {
+    const toBack = () => {
         setActiveComponent('default'); // Regresa al componente inicial
     };
 
+    const filterInitialData = {
+        id_semana: null,
+        id_empresa: null,
+        id_finca: null,
+        id_area: null,
+    }
+
+    const [filterData, setFilterData] = useState(filterInitialData)
+
     const menuOptions = [
-        { text: "Ver", icon: <Visibility />, onClick: () => { } }
+        {
+            text: "Ver",
+            icon: <Visibility />,
+            onClick: (row) => {
+                setIsShowInformationRow(true)
+                setFilterData({
+                    id_semana: row.id_semana,
+                    id_empresa: row.detalle_finca.finca.empresa.id,
+                    id_finca: row.detalle_finca.finca.id,
+                    id_area: row.detalle_finca.area.id,
+                })
+            }
+        }
     ];
 
     const [searchData, setSearchData] = useState('');
@@ -101,30 +125,46 @@ const PreviousWeeks = ({ setActiveComponent }) => {
         setSearchInformation(filteredBody);
     };
 
+    const handleEventInitialStep = () => {
+        setIsShowInformationRow(false)
+    }
+
     return (
         <>
-            <SectionForm icon={<AttachMoneyIcon fontSize='large' color='slateBlue' />} title={"Consulta de Semanas Anterirores"} />
-            <div style={{ display: 'flex', justifyContent: 'end', marginBottom: "20px", marginTop: '20px' }}>
-                <SearchComponent
-                    value={searchData}
-                    onChange={handleChange}
-                    width="50%"
+            {isShowInformationRow ?
+                <ActivityCapture 
+                    setActiveComponent={setActiveComponent} 
+                    onClose={onClose} 
+                    initialStep={1} 
+                    onEventInitialStep={handleEventInitialStep} 
+                    provitionalFilterData={filterData}
                 />
-            </div>
-            <DinamicTableComponent
-                information={{
-                    header: tableHeaders,
-                    body: searchInformation
-                }}
-                menuOptions={menuOptions}
-            />
-            <ButtonComponent
-                icon={<ArrowBackIcon />}
-                label='Regresar'
-                color="error"
-                styleButton="contained"
-                onClick={Back}
-            />
+                :
+                <>
+                    <SectionForm icon={<AttachMoneyIcon fontSize='large' color='slateBlue' />} title={"Consulta de Semanas Anterirores"} />
+                    <div style={{ display: 'flex', justifyContent: 'end', marginBottom: "20px", marginTop: '20px' }}>
+                        <SearchComponent
+                            value={searchData}
+                            onChange={handleChange}
+                            width="50%"
+                        />
+                    </div>
+                    <DinamicTableComponent
+                        information={{
+                            header: tableHeaders,
+                            body: searchInformation
+                        }}
+                        menuOptions={menuOptions}
+                    />
+                    <ButtonComponent
+                        icon={<ArrowBackIcon />}
+                        label='Regresar'
+                        color="error"
+                        styleButton="contained"
+                        onClick={toBack}
+                    />
+                </>
+            }
         </>
     );
 }

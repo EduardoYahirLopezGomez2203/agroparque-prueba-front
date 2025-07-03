@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import { Dialog, DialogActions, Box, Snackbar, Alert, Divider, Typography } from "@mui/material";
 import BasicTableComponent from "../table/BasicTableComponent";
 import useSnackbarAlert from "../../modules/layer1/formactivitymanager/useSnackbarAlert";
@@ -13,24 +13,39 @@ import ButtonComponent from "../buttons/ButtonComponent";
 import { SelectForm } from "../../modules/layer1/admin/Form";
 import { DialogContent } from "@mui/material";
 
-const AddManagerModal = ({ open, setIsOpenModal, dataArea, saveAreas }) => {
+const AddManagerModal = ({ open, setIsOpenModal, dataArea, saveAreas, onCloseCustom, isEditing, initialSelectedIds, resetTrigger }) => {
     const initialData = { id_area: null, nombre_area: "" };
     const [dataValue, setDataValue] = useState(initialData);
     const [tableData, setTableData] = useState([]);
     const [editId, setEditId] = useState(null);
+    const [wasEdited, setWasEdited] = useState(false);
     const { alertInfo, showAlert, closeAlert } = useSnackbarAlert();
 
-    const closeModal = () => {
-        setIsOpenModal(false);
-        setDataValue(initialData);
-        setTableData([]);
-        setEditId(null);
-    };
+    useEffect(() => {
+        if (resetTrigger) {
+            setDataValue(initialData);
+            setTableData([]);
+            setEditId(null);
+        }
+    }, [resetTrigger]);
+
+    useEffect(() => {
+    if (open) {
+        // Solo inicializa la tabla si aún no tiene datos
+        if (tableData.length === 0 && initialSelectedIds.length > 0 && wasEdited === false) {
+        const rows = initialSelectedIds.map((id) => ({
+            id_area: id,
+            nombre_area: dataArea.find((area) => area.id === id)?.nombre || "Desconocido"
+        }));
+            setTableData(rows);
+        }
+    }
+    }, [open, initialSelectedIds, dataArea, tableData.length, wasEdited]);
 
     const handleAddArea = () => {
         if (!dataValue.id_area) {
-        showAlert("Selecciona un área antes de añadir", "warning");
-        return;
+            showAlert("Selecciona un área antes de añadir", "warning");
+            return;
         }
 
         // Verifica si ya existe un área con el mismo id en la tabla
@@ -67,6 +82,7 @@ const AddManagerModal = ({ open, setIsOpenModal, dataArea, saveAreas }) => {
 
         // limpiar estado de formulario
         setDataValue(initialData);
+        setWasEdited(true);
         setEditId(null);
     };
 
@@ -74,11 +90,13 @@ const AddManagerModal = ({ open, setIsOpenModal, dataArea, saveAreas }) => {
     const handleEditRow = row => {
         setDataValue({ id_area: row.id_area, nombre_area: row.nombre_area });
         setEditId(row.id_area);
+        setWasEdited(true);
     };
 
     const handleDeleteRow = row => {
         setTableData(prev => prev.filter(r => r.id_area !== row.id_area));
         showAlert("Área eliminada", "info");
+        setWasEdited(true);
     };
 
     const handleSaveAll = () => {
@@ -89,7 +107,7 @@ const AddManagerModal = ({ open, setIsOpenModal, dataArea, saveAreas }) => {
         const ids = tableData.map(r => r.id_area);
         saveAreas(ids);
         showAlert("Áreas guardadas", "success");
-        closeModal();
+        setWasEdited(false);
     };
 
     const tableHeaders = [
@@ -188,7 +206,7 @@ const AddManagerModal = ({ open, setIsOpenModal, dataArea, saveAreas }) => {
                 label="Cancelar"
                 styleButton="outlined"
                 color="brightRed"
-                onClick={closeModal}
+                onClick={onCloseCustom}
                 icon={<CloseIcon />}
             />
             </DialogActions>

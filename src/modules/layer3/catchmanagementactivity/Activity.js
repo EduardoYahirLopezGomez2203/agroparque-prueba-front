@@ -11,131 +11,168 @@ import EditIcon from '@mui/icons-material/Edit';
 import useSnackbarAlert from '../../layer1/formactivitymanager/useSnackbarAlert';
 import {useState} from 'react';
 
-const Activity = ({
-                      dataValue,
-                      setDataValue,
-                      initialData,
-                      dataTable,
-                      setDataTable
-                  }) => {
+const Activity = ({ dataValue, setDataValue, initialData, dataTable, setDataTable, originalData }) => {
 
-    // Estados de edición
-    const [isEditing, setIsEditing] = useState(false);
-    const [editId, setEditId] = useState(null);
+  // Estados de edición
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
 
-    // Estado de Alertas
-    const {
-        alertInfo,
-        showAlert,
-        closeAlert
-    } = useSnackbarAlert();
+  // Estado de Alertas
+  const { alertInfo, showAlert, closeAlert } = useSnackbarAlert();
 
-    // Agregar o actualizar fila en frontend
-    const handleAddActivity = newRecord => {
-        console.log('onAdd recibe:', newRecord, {
-            isEditing,
-            editId
-        });
+  // Agregar o actualizar fila en frontend
+  const handleAddActivity = newRecord => {
+    const precioRaw = newRecord.precio;
+    const precio2 = Math.round(precioRaw * 100) / 100;
 
-        const precioRaw = newRecord.precio;
-        const precio2 = Math.round(precioRaw * 100) / 100;  // redondea a 2 decimales
+    const existing = dataTable.find(r => r.id_actividad === newRecord.id_actividad);
 
-        // Revisa si hay actividades duplicadas
-        const isDuplicate = !isEditing
+    // Caso 1: Ya existe y NO está eliminado
+    if (isEditing) {
+      if ( existing && existing.id_actividad !== editId && existing.operacion !== 3 ) {
+        showAlert("Esta actividad ya ha sido agregada, no se permiten duplicados.", "warning");
+        return;
+      }
+    } else {
+      // Si está editando, validación normal
+      if (existing && existing.operacion !== 3) {
+        showAlert("Esta actividad ya ha sido agregada, no se permiten duplicados.", "warning");
+        return;
+      }
+    }
 
-            // En caso de agregar
-            ? dataTable.some(r => r.id_actividad === newRecord.id_actividad)
-            // En caso de editar (Solo al cambiar un id que ya existe en otro registro)
-            : dataTable.some(r =>
-                r.id_actividad === newRecord.id_actividad &&
-                r.id_actividad !== editId
-            );
+    // Caso 2: Si estaba eliminada, se marca como actualizada
+    if (existing && existing.operacion === 3 && !isEditing) {
+      const updated = {
+        ...existing,
+        precio: precio2,
+        operacion: 2 
+      };
+      setDataTable(prev => prev.map(r =>
+        r.id_actividad === newRecord.id_actividad ? updated : r
+      ));
+      setIsEditing(false);
+      setEditId(null);
+      setDataValue({
+        id_actividad: null,
+        cantidad_avance: "",
+        precio: "",
+        nombre: ""
+      });
+      return;
+    }
 
-        // Si es duplicado, se muestra la alerta y se sale
-        if (isDuplicate) {
-            showAlert('Esa actividad ya está en la tabla. No se permiten duplicados.', 'warning');
-            return;
-        }
+  // Buscar si esta actividad ya existía originalmente
+  const original = originalData.find(o => o.id_actividad === newRecord.id_actividad);
+  const isOriginal = !!original;
 
-        const lookupId = isEditing ? editId : newRecord.id_actividad;
-        const idx = dataTable.findIndex(r => r.id_actividad === lookupId);
-        console.log(`lookupId=${lookupId} idx=${idx}`);
-        const row = {
-            id: newRecord.id_actividad,   // clave para React
-            id_actividad: newRecord.id_actividad,
-            nombre_actividad: newRecord.nombre,
-            unidad_avance: newRecord.cantidad_avance,
-            precio: precio2
-        };
+  let operacion = 1; // Por defecto es nueva
 
-        if (idx !== -1) {
-            const copy = [...dataTable];
-            copy[idx] = row;
-            setDataTable(copy);
-        } else {
-            setDataTable(prev => [...prev, row]);
-        }
+  if (isOriginal) {
+    const cambioPrecio = Number(original.precio) !== Number(precio2);
+    const cambioActividad = original.id_actividad !== newRecord.id_actividad;
 
-    // SOLUCIÓN: Resetear solo los campos de actividad, no todo el estado
-    setIsEditing(false);
-    setEditId(null);
-    setDataValue(({
-      id_actividad: null,
-      cantidad_avance: "",
-      precio: "",
-      nombre: ""
-    }));
+    if (cambioPrecio || cambioActividad) {
+      operacion = 2;
+    } else {
+      operacion = 0; // Sin cambios
+    }
+  }
+
+  const row = {
+    id: newRecord.id_actividad,
+    id_actividad: newRecord.id_actividad,
+    nombre_actividad: newRecord.nombre,
+    unidad_avance: newRecord.cantidad_avance,
+    precio: precio2,
+    operacion,
+    ...(original && { cns_detalle_actividad: original.cns_detalle_actividad })
   };
 
-  // Maneja la edición de la columna
+  const idx = dataTable.findIndex(r => r.id_actividad === editId);
+
+  if (idx !== -1) {
+      const copy = [...dataTable];
+      copy[idx] = row;
+      setDataTable(copy);
+  } else {
+    setDataTable(prev => [...prev, row]);
+  }
+
+  setIsEditing(false);
+  setEditId(null);
+  setDataValue({
+    id_actividad: null,
+    cantidad_avance: "",
+    precio: "",
+    nombre: ""
+    });
+  };
+
   const handleEditRow = row => {
     console.log("Editar fila:", row);
-    setDataValue(({
+    setDataValue({
       id_actividad: row.id_actividad,
       cantidad_avance: row.unidad_avance,
       precio: row.precio,
       nombre: row.nombre_actividad
-    }));
-    setEditId(row.id_actividad);
+    });
+    setEditId(Number(row.id_actividad)); 
     setIsEditing(true);
   };
 
 
-    const handleDeleteRow = row => {
+
+  const handleDeleteRow = row => {
+    const esOriginal = originalData.some(o => o.id_actividad === row.id_actividad);
+
+    if (esOriginal) {
+      // Solo actualiza su operación a 3 en el estado
+      setDataTable(prev =>
+        prev.map(r =>
+          r.id_actividad === row.id_actividad
+          ? { ...r, operacion: 3 }
+          : r
+        )
+      );
+    } else {
+        // Si es nuevo, se elimina directamente
         setDataTable(prev => prev.filter(r => r.id_actividad !== row.id_actividad));
-    };
+      }
+  };
 
-    const tableHeaders = [
-        {
-            id: 'nombre_actividad',
-            text: 'Actividad',
-            icon: <ViewComfyIcon/>
-        },
-        {
-            id: 'unidad_avance',
-            text: 'Unidad',
-            icon: <BalanceIcon/>
-        },
-        {
-            id: 'precio',
-            text: 'Precio',
-            icon: <MonetizationOnIcon/>
-        }
-    ];
 
-    // Botón de tres puntos de edición
-    const rowActions = [
-        {
-            icon: <EditIcon fontSize="small"/>,
-            text: 'Editar',
-            onClick: handleEditRow
-        },
-        {
-            icon: <DeleteIcon fontSize="small"/>,
-            text: 'Eliminar',
-            onClick: handleDeleteRow
-        }
-    ];
+  const tableHeaders = [
+    {
+      id: 'nombre_actividad',
+      text: 'Actividad',
+      icon: <ViewComfyIcon/>
+    },
+    {
+      id: 'unidad_avance',
+      text: 'Unidad',
+      icon: <BalanceIcon/>
+    },
+    {
+      id: 'precio',
+      text: 'Precio',
+      icon: <MonetizationOnIcon/>
+    }
+  ];
+
+  // Botón de tres puntos de edición
+  const rowActions = [
+    {
+      icon: <EditIcon fontSize="small"/>,
+      text: 'Editar',
+      onClick: handleEditRow
+    },
+    {
+      icon: <DeleteIcon fontSize="small"/>,
+      text: 'Eliminar',
+      onClick: handleDeleteRow
+    }
+  ];
 
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -150,6 +187,7 @@ const Activity = ({
         onAdd={handleAddActivity}
         isEditing={isEditing}
         editId={editId}
+        originalData={originalData} // Datos originales para comparar
         onCancelEditing={() => {
           setIsEditing(false);
           setEditId(null);
@@ -167,7 +205,10 @@ const Activity = ({
         formIcon={<GrassIcon />}
         tableComponent={
           <BasicTableComponent
-            information={{ header: tableHeaders, body: dataTable }}
+            information={{
+              header: tableHeaders,
+              body: dataTable.filter(r => r.operacion !== 3) // Oculta visualmente los eliminados
+            }}
             showMenuColumn={true}
             items={rowActions}
           />

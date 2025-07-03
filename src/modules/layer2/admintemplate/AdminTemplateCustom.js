@@ -28,7 +28,7 @@ const AdminTemplateCustom = ({
     isUpdate,
     specialSectionTable,
     showHeader = true,
-    showAccordionTable
+    showAccordionTable,
 }) => {
 
     const [searchData, setSearchData] = React.useState('');

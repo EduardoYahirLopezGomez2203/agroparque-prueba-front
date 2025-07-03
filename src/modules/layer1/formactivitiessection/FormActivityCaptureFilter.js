@@ -44,7 +44,7 @@ const FormActivityCaptureFilter = ({ dataValue, setDataValue }) => {
 
     const dataWeek = processedDataWeek.body.map(body => ({
         id: body.id,
-        nombre: body.numero_semana
+        nombre: `${body.numero_semana} - ${body.fecha_inicio} - ${body.fecha_fin}`
     }));
 
     const dataCompany = processedDataCompanyByWeek.body.map(body => ({

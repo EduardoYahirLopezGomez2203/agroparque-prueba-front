@@ -11,11 +11,12 @@ const InputComponent = ({
     type = "text",
     height = "24px",
     fontSize = "13px",
+    onChangeCustom
 }) => {
-
     const handleChange = (event) => {
         
         const { name, value } = event.target;
+        onChangeCustom?.();
 
         const regex = /^[^\s].*$/; // No permite espacio al principio
 

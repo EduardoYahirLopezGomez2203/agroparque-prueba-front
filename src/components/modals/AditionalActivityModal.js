@@ -6,19 +6,25 @@ import ButtonComponent from "../buttons/ButtonComponent";
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import InputComponent from "../inputs/InputComponent";
-import useFilterEmployeeByCompany from "../../modules/layer1/formemployee/useFilterEmployeeByCompany";
 import { SelectForm } from "../../modules/layer1/admin/Form";
-import useFilterCompanyByWeekOfBudget from "../../modules/layer1/formactivitiessection/useFilterCompanyByWeekOfBudget";
+import useFilterEmployeeByCompany from "../../modules/layer1/formemployee/useFilterEmployeeByCompany";
+import useCompanyList from "../../modules/layer1/formcompany/useCompanyList";
+import useActivitiesByFincaAreaList from "../../modules/layer1/formactivities/useActivitiesByFincaAreaList";
+import useActivityList from "../../modules/layer1/formactivities/useActivityList";
 
 const AditionalActivityModal = ({
     openDialog, setIsAditionalEmployeeModalOpen, setActivityCaptureData, dataActivity, showMessage
 }) => {
 
     const { handleList: handleListEmployee, processedData: processedDataEmployee, error: errorEmployee } = useFilterEmployeeByCompany()
-    const { handleList: handleListCompany, processedData: processedDataCompany, error: errorCompany } = useFilterCompanyByWeekOfBudget()
+    //const { handleList: handleListCompany, processedData: processedDataCompany, error: errorCompany } = useFilterCompanyByWeekOfBudget()
+    const { handleList: handleListCompany, processedData: processedDataCompany, error: errorCompany } = useCompanyList()
+    // Usado momentaneamente
+    const {handleList: handleListActivitiesByFincaArea, processedData: processedDataActivitiesByFincaArea } = useActivityList();
 
     useEffect(() => {
         handleListCompany()
+        handleListActivitiesByFincaArea()
     }, [])
 
     const initialData = {
@@ -34,7 +40,8 @@ const AditionalActivityModal = ({
     const [dataValue, setDataValue] = useState(initialData);
 
     useEffect(() => {
-        handleListEmployee(dataValue.id_empresa)
+        if (dataValue.id_empresa)
+            handleListEmployee(dataValue.id_empresa)
     }, [dataValue.id_empresa])
 
     const dataCompany = processedDataCompany.body.map(body => ({
@@ -67,6 +74,7 @@ const AditionalActivityModal = ({
                 },
                 cantidad_avance: dataValue.cantidad_avance,
                 fecha: dataValue.fecha,
+                operacion: 1,
             }
         ]);
 
@@ -96,7 +104,11 @@ const AditionalActivityModal = ({
             </Box>
 
             <Divider sx={{ backgroundColor: "#9AA0A8", height: "2px" }} />
-            <Box padding="20px">
+            <Box 
+                padding="20px"
+                component="form"
+                onSubmit={handleSubmit}
+            >
                 <Typography
                     variant="body1"
                     fontWeight="600"
@@ -108,7 +120,14 @@ const AditionalActivityModal = ({
                     Datos Generales
                 </Typography>
 
-                <Stack direction="row" gap={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: '30px' }}>
+                <Stack direction="row" gap={2}
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: "40%"
+                    }}
+                >
                     <SelectForm
                         title={"Empresa"}
                         dataValue={dataValue}
@@ -119,7 +138,7 @@ const AditionalActivityModal = ({
                         isDisabled={false}
                     />
 
-                    <SelectForm
+                    {/*<SelectForm
                         title={"Finca"}
                         dataValue={dataValue}
                         setDataValue={setDataValue}
@@ -137,10 +156,10 @@ const AditionalActivityModal = ({
                         options={[]}
                         fieldName="id_area"
                         isDisabled={false}
-                    />
+                    />*/}
                 </Stack>
 
-                <Stack direction="row" gap={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: '30px' }}>
+                <Stack direction="row" gap={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <SelectForm
                         title={"Empleado"}
                         dataValue={dataValue}
@@ -159,23 +178,23 @@ const AditionalActivityModal = ({
                         fieldName="id_actividad"
                         isDisabled={false}
                     />
-                </Stack>
 
-                <Box
-                    sx={{
-                        width: "50%",
-                        paddingTop: 2
-                    }}
-                >
-                    <InputComponent
-                        title={"Unidad"}
-                        isRequired
-                        dataValue={dataValue}
-                        setDataValue={setDataValue}
-                        fieldName="id_unidad"
-                        disabled
-                    />
-                </Box>
+                    <Box
+                        sx={{
+                            width: "25%",
+                            paddingTop: 2
+                        }}
+                    >
+                        <InputComponent
+                            title={"Unidad"}
+                            isRequired
+                            dataValue={dataValue}
+                            setDataValue={setDataValue}
+                            fieldName="id_unidad"
+                            disabled
+                        />
+                    </Box>
+                </Stack>
 
                 <Typography
                     variant="body1"
@@ -226,9 +245,9 @@ const AditionalActivityModal = ({
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4, gap: 2 }}>
                     <ButtonComponent
                         label="Aceptar"
+                        typeButton="submit"
                         icon={<CheckIcon />}
                         color="primary"
-                        onClick={handleSubmit}
                     />
                     <ButtonComponent
                         label="Cancelar"

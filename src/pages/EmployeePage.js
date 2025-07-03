@@ -69,7 +69,7 @@ const EmployeePage = () => {
     const tableHeaders = [
         {
             id: "nombre",
-            text: "Nombre Completo",
+            text: "Nombre",
             icon: <PersonRoundedIcon sx={{ color: "slateBlue" }} />,
         },
         {

@@ -6,12 +6,16 @@ import { useEffect, useState } from "react";
 import { Stack } from "@mui/material";
 import useUserCreate from "./useUserCreate";
 import useUserList from "../formprofile/useProfileList";
+import SnackbarComponent from "../../../components/snackbar/SnackbarComponent"
+import useSnackbarOptions from "../../../hooks/useSnackbarOption"
 
 const FormUser = ({ updateData, setUpdateData, isUpdate ,setIsUpdate, setUpdate, responseUpdate }) => {
     const { handleCreate, datos } = useUserCreate();
     const { handleList, processedData } = useUserList();
     const [password, setPassword] = useState('');
     const [disabledPassword, setDisabledPassword] = useState(false) // Ayuda a activar y desactivar campos
+
+    const { snackbarOptions, setSnackbarOptions, showMessage} = useSnackbarOptions() 
 
     const data = {
         id_perfil: null,
@@ -25,10 +29,6 @@ const FormUser = ({ updateData, setUpdateData, isUpdate ,setIsUpdate, setUpdate,
     };
 
     const [dataValue, setDataValue] = useState(data);
-
-    useEffect(() => {
-        console.log(dataValue)
-    }, [dataValue])
 
     const resetForm = () => {
         setPassword('');
@@ -53,15 +53,12 @@ const FormUser = ({ updateData, setUpdateData, isUpdate ,setIsUpdate, setUpdate,
                 celular: updateData.celular,
                 login: updateData.login
             }));
-            console.log("Datos del dataValue:", dataValue);
         } else {
             setDisabledPassword(false)
         }
     }, [isUpdate]);
 
     const handleFormUpdate = () => {
-        console.log("Datos a guardar desde FormFarm:", dataValue);
-        console.log("Entro a el updateData cuando se esta creando");
         setUpdateData((prevState) => ({
             ...prevState,
             id_perfil: dataValue.id_perfil,
@@ -76,8 +73,22 @@ const FormUser = ({ updateData, setUpdateData, isUpdate ,setIsUpdate, setUpdate,
         resetForm();
     };
 
+    const handleSubmit = (dataValue, isUpdate, handleFormUpdate) => {
+        if (dataValue.password !== password) {
+            showMessage("Las contraseñas no coinciden", "warning")
+            return
+        }
+
+        if (dataValue.celular.length !== 10) {
+            showMessage("Recuerda que tu número debe tener 10 dígitos", "warning")
+            return
+        }
+
+        handleCreate(dataValue, isUpdate, handleFormUpdate)
+    }
+
     const formApi = {
-        handleCreate,
+        handleCreate: handleSubmit,
         dataValue,
         response: datos,
         responseUpdate,
@@ -125,6 +136,7 @@ const FormUser = ({ updateData, setUpdateData, isUpdate ,setIsUpdate, setUpdate,
                 <InputForm title="Numero Telefono" isRequired type="number" setDataValue={setDataValue} dataValue={dataValue} fieldName="celular" />
                 <InputForm title="Correo Electrónico" isRequired type="email" setDataValue={setDataValue} dataValue={dataValue} fieldName="email" />
             </SectionForm>
+            <SnackbarComponent snackbarOptions={snackbarOptions} setSnackbarOptions={setSnackbarOptions} />
         </Form>
     );
 };

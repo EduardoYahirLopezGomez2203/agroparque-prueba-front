@@ -32,6 +32,7 @@ const ApiService = {
             } else if (contentType && (contentType.startsWith("image/") || contentType.includes("application/pdf") || contentType.includes("application/vnd"))) {
                 return await response.blob();
             } else {
+                console.log("entro al response.text", response.text);
                 return await response.text();
             }
         } catch (error) {

@@ -12,7 +12,6 @@ import { Stack } from "@mui/material";
 import AditionalEmployeeModal from "../../../components/modals/AditionalEmployeeModal";
 import AditionalActivityModal from "../../../components/modals/AditionalActivityModal";
 import useFilterEmployeeByFarm from "../formemployee/useFilterEmployeeByFarm"
-import useCompanyList from "../formcompany/useCompanyList";
 import useWeekLogList from '../../layer1/formweeklog/useWeekLogList';
 import useFilterActivityByWeekFarmArea from "./useFilterActivityByWeekFarmArea";
 import { toLocalDate } from "../../../utils/dateUtil";
@@ -20,13 +19,14 @@ import SnackbarComponent from "../../../components/snackbar/SnackbarComponent";
 import useSnackbarOption from "../../../hooks/useSnackbarOption";
 
 const FormEmployeeDeployment = ({
-    dataValue, setDataValue, filterData,
+    dataValue, setDataValue, filterData, isCaptureActivityClose,
     setActivityCaptureData, modeUpdate, setModeUpdate
 }) => {
 
-    const { handleList: handleListEmployee, processedData: processedDataEmployee } = useFilterEmployeeByFarm();
-    const { handleList: handleListActivity, processedData: processedDataActivity } = useFilterActivityByWeekFarmArea();
+    const { handleList: handleListEmployee, processedData: processedDataEmployee, error: errorEmployee } = useFilterEmployeeByFarm();
+    const { handleList: handleListActivity, processedData: processedDataActivity, error: errorActivity } = useFilterActivityByWeekFarmArea();
     const { handleList: handleListWeek, processedData: processedDataWeek, error: errorWeek } = useWeekLogList();
+    
 
     const [isAditionalEmployeeModalOpen, setIsAditionalEmployeeModalOpen] = useState(false);
     const [isAditionalActivityModalOpen, setIsAditionalActivityModalOpen] = useState(false);
@@ -39,7 +39,9 @@ const FormEmployeeDeployment = ({
         handleListWeek(filterData.id_semana) // Obteniendo los datos de la semana seleccionada
     }, []);
 
-    useEffect(() => { if (errorWeek) showMessage("Ocurrio un error al obtener las fechas", "error")}, [errorWeek])
+    useEffect(() => { if (errorEmployee) showMessage("Ocurrio un error al obtener los empleados", "error") }, [errorWeek])
+    useEffect(() => { if (errorActivity) showMessage("Ocurrio un error al obtener las actividades", "error") }, [errorWeek])
+    useEffect(() => { if (errorWeek) showMessage("Ocurrio un error al obtener las fechas", "error") }, [errorWeek])
 
     const selectedWeek = processedDataWeek.body
 
@@ -69,6 +71,7 @@ const FormEmployeeDeployment = ({
             cantidad_avance: "",
             fecha: null
         })
+
     }
 
     const openModalAditionalEmployee = () => {
@@ -92,13 +95,25 @@ const FormEmployeeDeployment = ({
     const handleSubmit = (event) => {
         event.preventDefault();
 
+        if (isCaptureActivityClose) {
+            showMessage("Captura de actividades finalizada", "warning")
+            return
+        }
+
         // Buscar el empleado y la actividad seleccionados
         const trabajador = dataEmployee.find(emp => emp.id === dataValue.id_trabajador);
-        const actividad = dataActivity.find(act => act.id === dataValue.id_actividad);
+        const actividad = dataActivity.find(act => act.id === dataValue.id_actividad)
 
-        setActivityCaptureData(prev => [
-            ...prev,
-            {
+        /*
+          Si la el registro está marcado con eliminar: 3, y es el mismo id que trata el usuario de ingresar.
+          Entonces se marcará como actualizar: 2
+        */
+        setActivityCaptureData(prev => {
+            const searchId = `${dataValue.id_actividad}${dataValue.id_trabajador}`;
+            const exists = prev.find(element => element.id === searchId);
+
+            const buildData = {
+                id: searchId,
                 trabajador: {
                     id: dataValue.id_trabajador,
                     nombre: trabajador.nombre
@@ -109,8 +124,28 @@ const FormEmployeeDeployment = ({
                 },
                 cantidad_avance: dataValue.cantidad_avance,
                 fecha: dataValue.fecha,
+                operacion: 2
             }
-        ]);
+
+            // Si ya existe con operación 3 → lo reemplazamos con operación 2
+            if (exists && exists.operacion === 3) {
+                return prev.map(element => {
+                    if (element.id === searchId) {
+                        return buildData;
+                    }
+                    return element;
+                });
+            }
+
+            // Si no existe, lo agregamos con operación 1
+            return [
+                ...prev,
+                {
+                    ...buildData,
+                    operacion: 1
+                }
+            ];
+        });
 
         handleReset()
     };
@@ -120,15 +155,26 @@ const FormEmployeeDeployment = ({
         setModeUpdate(!modeUpdate)
     }
 
+    // Refactorizar error al editar trabajador nuevo
     const handleUpdate = (event) => {
         event.preventDefault();
 
-        setActivityCaptureData(data => {
+        if (isCaptureActivityClose) {
+            showMessage("Captura de actividades finalizada", "warning")
+            return
+        }
+
+        /*
+          Si la operacion es una insercion, la dejamos tal cual,
+          contrario si no lo es, la marcamos como actualizacion: 3
+        */
+        setActivityCaptureData(element => element.map(data => {
             if (data.id === dataValue.id) {
                 const trabajador = dataEmployee.find(emp => emp.id === dataValue.id_trabajador);
                 const actividad = dataActivity.find(act => act.id === dataValue.id_actividad);
 
-                return [{
+                return {
+                    id: `${dataValue.id_actividad}${dataValue.id_trabajador}`,
                     trabajador: {
                         id: dataValue.id_trabajador,
                         nombre: trabajador.nombre,
@@ -139,11 +185,14 @@ const FormEmployeeDeployment = ({
                     },
                     cantidad_avance: dataValue.cantidad_avance,
                     fecha: dataValue.fecha,
-                }]
+                    operacion: data.operacion === 1 ? 1 : 2,
+                    cns_actividad_trabajador: data?.cns_actividad_trabajador,
+                    old_trabajador: data.trabajador.id
+                }
             }
 
-            return [data]
-        })
+            return data
+        }))
 
         handleReset()
         setModeUpdate(false)
@@ -161,10 +210,10 @@ const FormEmployeeDeployment = ({
                         icon={<PersonIcon fontSize='large' color='slateBlue' />}
                     >
                         <BasicButtonComponent onClick={openModalAditionalEmployee} styleButton="contained" icon={<PersonAddAlt1Icon fontSize="medium" />} color="vividBlue" width="40px" height="40px" />
-                        <SelectForm title="Empleado" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataEmployee} fieldName="id_trabajador" />
-                        <SelectForm title="Actividad" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataActivity} fieldName="id_actividad" />
-                        <InputForm title="Cantidad de Avance" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="cantidad_avance" type="number" />
-                        <SelectForm title="Fecha" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dateOptions} fieldName="fecha" />
+                        <SelectForm title="Empleado" disabled={isCaptureActivityClose} setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataEmployee} fieldName="id_trabajador" />
+                        <SelectForm title="Actividad" disabled={isCaptureActivityClose} setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataActivity} fieldName="id_actividad" />
+                        <InputForm title="Cantidad de Avance" disabled={isCaptureActivityClose} isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="cantidad_avance" type="number" />
+                        <SelectForm title="Fecha" disabled={isCaptureActivityClose} setDataValue={setDataValue} dataValue={dataValue} isRequired options={dateOptions} fieldName="fecha" />
                     </SectionForm>
 
                     <ButtonComponent
@@ -176,21 +225,22 @@ const FormEmployeeDeployment = ({
                     />
                 </Stack>
             </BasicForm>
-            <AditionalEmployeeModal 
+            <AditionalEmployeeModal
                 openDialog={isAditionalEmployeeModalOpen}
-                setIsAditionalEmployeeModalOpen={setIsAditionalEmployeeModalOpen} 
-                setActivityCaptureData={setActivityCaptureData} 
+                setIsAditionalEmployeeModalOpen={setIsAditionalEmployeeModalOpen}
+                setActivityCaptureData={setActivityCaptureData}
                 dataActivity={dataActivity}
                 showMessage={showMessage}
                 dateOptions={dateOptions}
+                filterData={filterData}
             />
-            <AditionalActivityModal 
+            <AditionalActivityModal
                 openDialog={isAditionalActivityModalOpen}
-                setIsAditionalEmployeeModalOpen={setIsAditionalActivityModalOpen} 
-                setActivityCaptureData={setActivityCaptureData} 
+                setIsAditionalEmployeeModalOpen={setIsAditionalActivityModalOpen}
+                setActivityCaptureData={setActivityCaptureData}
                 dataActivity={dataActivity}
                 showMessage={showMessage}
-                dateOptions={dateOptions} 
+                dateOptions={dateOptions}
             />
             <SnackbarComponent snackbarOptions={snackbarOptions} setSnackbarOptions={setSnackbarOptions} />
         </>

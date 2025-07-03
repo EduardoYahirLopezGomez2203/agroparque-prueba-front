@@ -9,15 +9,10 @@ import useWeekCurrenYearLogList from '../../layer1/formweeklog/useWeekCurrenYear
 
 const FormBudgetCaptureFilter = ({dataValue, setDataValue}) => {
 
-    const { handleList: handleListWeek, processedData: processedDataWeek} = useWeekCurrenYearLogList()
+    const { handleList: handleListWeek, processedData: processedDataWeek} = useWeekCurrenYearLogList();
     const { handleList: handleListCompany, processedData: processedDataCompany } = useCompanyList();
     const { handleList: handleListFarmsByComany, processedData: processedDataFarmsByCompany } = useFarmsByCompanyList();
     const { handleList: handleListAreasByFarm, processedData: processedDataAreasByFarm } = useAreasByFarmList();
-
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        console.log("Formulario enviado");
-    };
 
     useEffect(() => {
         handleListWeek();
@@ -42,7 +37,7 @@ const FormBudgetCaptureFilter = ({dataValue, setDataValue}) => {
 
     const dataWeek = processedDataWeek.body.map(body => {
         const id = String(body.id);
-        const nombre = String(body.numero_semana);
+        const nombre = `${body.numero_semana} - ${body.fecha_inicio} - ${body.fecha_fin}`
         return { id, nombre};
     });
 
@@ -69,7 +64,6 @@ const FormBudgetCaptureFilter = ({dataValue, setDataValue}) => {
     return (
     <>
         <BasicFilterForm
-                handleSubmit={handleSubmit}
             >
                 <SectionForm title="Filtros" direction="row"
                     icon={<BubbleChartIcon fontSize="large" color="slateBlue" />}

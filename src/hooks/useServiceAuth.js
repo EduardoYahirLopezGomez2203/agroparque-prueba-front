@@ -12,7 +12,7 @@ const useServiceAuth = () => {
 	const obtenerDatos = useCallback(async (type, URL, params, headers = {}) => {
 		//NOTA: Se tiene una llamada de useCallBack junto con un async con el fin de que la tarea de consumo se quede proceso de espera antes de seguir ejecutando
 		try {
-			setError(null)
+			setError(null);
 			setCargando(true);
 			const data = await apiService.consume(type, URL, params, headers);
 			setDatos(data);

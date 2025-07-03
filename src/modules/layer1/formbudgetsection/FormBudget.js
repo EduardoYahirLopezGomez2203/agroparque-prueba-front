@@ -1,6 +1,6 @@
 import BasicForm from "../admin/BasicForm";
 import { SectionForm, SelectForm, InputForm } from "../admin/Form";
-import { useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ButtonComponent from "../../../components/buttons/ButtonComponent";
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -9,33 +9,46 @@ import useActivitiesByFincaAreaList from "../formactivities/useActivitiesByFinca
 
 const FormBudget = ({ dataValue, setDataValue, dataTable, setDataTable, isUpdate, setUpdate, setBudgetActivities, setUpdatePastBudget, showAlert}) => {
     const {handleList: handleListActivitiesByFincaArea, processedData: processedDataActivitiesByFincaArea } = useActivitiesByFincaAreaList();
-    
+    const [campoEditado, setCampoEditado] = useState(null);
+
+
     useEffect(() => {
         handleListActivitiesByFincaArea(dataValue.id_finca, dataValue.id_area);
     },[dataValue.id_finca, dataValue.id_area, handleListActivitiesByFincaArea])
 
-    //Efecto para calcular el total por el precio y cantidad de la actividad
     useEffect(() => {
-        // Solo realiza la operación si ambos valores existen y son números válidos
+        if (campoEditado !== "cantidad") return;
+
         const precio = parseFloat(dataValue.precio);
         const cantidad = parseFloat(dataValue.cantidad);
 
         if (!isNaN(precio) && !isNaN(cantidad)) {
-            const total = String(Number((precio * cantidad).toFixed(2))); // <-- aquí el cambio
-            if (dataValue.total !== total) {
-                setDataValue(prev => ({
-                    ...prev,
-                    total: total
-                }));
+            const nuevoTotal = Number((precio * cantidad).toFixed(2));
+            if (dataValue.total !== String(nuevoTotal)) {
+            setDataValue(prev => ({ ...prev, total: String(nuevoTotal) }));
             }
-        } else if (dataValue.total !== "") {
-            // Si alguno no es válido, limpia el total
-            setDataValue(prev => ({
-                ...prev,
-                total: ""
-            }));
+        } else if (isNaN(cantidad)){
+            setDataValue(prev => ({ ...prev, total: String("") }));
         }
-    }, [dataValue.isPastBudget, dataValue.precio, dataValue.cantidad, setDataValue, dataValue.total]);
+    }, [dataValue.cantidad, dataValue.precio]);
+
+
+    useEffect(() => {
+        if (campoEditado !== "total") return;
+
+        const precio = parseFloat(dataValue.precio);
+        const total = parseFloat(dataValue.total);
+
+        if (!isNaN(precio) && precio !== 0 && !isNaN(total)) {
+            const nuevaCantidad = Number((total / precio).toFixed(2));
+            if (dataValue.cantidad !== String(nuevaCantidad)) {
+            setDataValue(prev => ({ ...prev, cantidad: String(nuevaCantidad) }));
+            }
+        } else if (isNaN(total)){
+            setDataValue(prev => ({ ...prev, cantidad: String("") }));
+        }
+    }, [dataValue.total, dataValue.precio]);
+
 
     //Efecto para setear los campos unidad y precio
     useEffect(() => {
@@ -54,34 +67,47 @@ const FormBudget = ({ dataValue, setDataValue, dataTable, setDataTable, isUpdate
                     nombre_actividad: String(selected.nombre_actividad)
                 }));
             } 
+        } else {
+             const selected = processedDataActivitiesByFincaArea.body.find(
+                item => item.id_actividad === dataValue.id_actividad
+            );
+
+            if (selected) {
+                setDataValue(prev => ({
+                    ...prev,
+                    nombre_actividad: String(selected.nombre_actividad)
+                }));
+            } 
         }
     }, [dataValue.id_actividad, dataValue.isPastBudget,processedDataActivitiesByFincaArea.body, setDataValue, dataValue.unidad, dataValue.precio, dataValue.nombre_actividad]);
            //Funcion para crear o actualizar un presupuesto pasado o previamente agregado
     const handleSubmit = (event) => {
         event.preventDefault();
-        if(dataValue.status_presupuesto === "10"){
+
+        if (dataValue.status_presupuesto === "10") {
             const alreadyExists = dataTable.some(
-                item => String(item.id_actividad) === String(dataValue.id_actividad)
+            item => String(item.id_actividad) === String(dataValue.id_actividad) &&
+                    String(item.id) !== String(dataValue.id)
             );
-            console.log("Actividades en dataTable:", dataTable.map(item => item.id_actividad));
-            console.log("Actividad seleccionada en dataValue:", dataValue.id_actividad);
-            console.log("Estado de filtro:",alreadyExists)
-            if (!alreadyExists || isUpdate){
-                if(!isUpdate && !dataValue.isPastBudget){
-                    handleAddBudgetActivity();
-                } else if(isUpdate && !dataValue.isPastBudget){
-                    handleUpdateBudgetActivity();
-                } else if(isUpdate && dataValue.isPastBudget){
-                    handleUpdatePastBudgetActivity();
-                }
-            }  else {
-                showAlert("No es posible agregar una actividad duplicada.", "warning");
+
+            if (!alreadyExists) {
+            if (!isUpdate && !dataValue.isPastBudget) {
+                handleAddBudgetActivity();
+            } else if (isUpdate && !dataValue.isPastBudget) {
+                handleUpdateBudgetActivity();
+            } else if (isUpdate && dataValue.isPastBudget) {
+                handleUpdatePastBudgetActivity();
             }
+            } else {
+            showAlert("No es posible agregar una actividad duplicada.", "warning");
+            }
+
             handleReset();
         } else {
             showAlert("No es posible presupuestar esta actividad, ya que el presupuesto ha sido finalizado.", "warning");
         }
     };
+
 
    // Generador de id único
     const generateUniqueId = () => String(crypto.randomUUID());
@@ -217,8 +243,8 @@ const FormBudget = ({ dataValue, setDataValue, dataTable, setDataTable, isUpdate
                     <SelectForm sx={{width:"200px"}}  title="Actividad" setDataValue={setDataValue} dataValue={dataValue} isRequired options={dataActivityByFincaArea} fieldName="id_actividad" />
                     <InputForm  title="Unidad" setDataValue={setDataValue} dataValue={dataValue} fieldName="unidad" disabled={true}/>
                     <InputForm type="number" title="Precio" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="precio" disabled={true}/>
-                    <InputForm type="number" title="Cantidad" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="cantidad" />
-                    <InputForm type="number" title="Total" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="total" disabled={true}/>
+                    <InputForm type="number" title="Cantidad" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="cantidad" onChangeCustom={() => setCampoEditado("cantidad")}/>
+                    <InputForm type="number" title="Total" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="total" onChangeCustom={() => setCampoEditado("total")}/>
                 </SectionForm>
             </BasicForm> 
     </>

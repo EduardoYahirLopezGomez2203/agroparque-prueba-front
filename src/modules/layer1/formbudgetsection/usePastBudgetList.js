@@ -30,7 +30,8 @@ const usePastBudgetList = () => {
                 },
                 finca: {
                     id_finca: item.detalle_finca.finca.id,
-                    nombre_finca: item.detalle_finca?.finca.nombre
+                    nombre_finca: item.detalle_finca?.finca.nombre,
+                    cns_detalle_finca: item.detalle_finca.id
                 },
                 empresa: {
                     id_empresa: item.detalle_finca.finca.empresa.id,
@@ -38,7 +39,7 @@ const usePastBudgetList = () => {
                 },
                 area: {
                     id_area: item.detalle_finca?.area?.id,
-                    nombre_area: item.detalle_finca?.area?.nombre
+                    nombre_area: item.detalle_finca?.area.nombre
                 },
             }));
             console.log("Datos transformados:", transformed);

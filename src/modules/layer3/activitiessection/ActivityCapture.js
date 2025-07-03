@@ -22,13 +22,26 @@ import SnackbarComponent from '../../../components/snackbar/SnackbarComponent';
 import useSnackbarOption from '../../../hooks/useSnackbarOption';
 import useActivityCaptureCreate from '../../layer1/formactivitiessection/useActivityCaptureCreate';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import useFilterActivityCaptureByWeekFarmArea from '../../layer1/formactivitiessection/useFilterActivityCaptureByWeekFarmArea';
+import useBudgetExists from '../../layer1/formbudgetsection/useBudgetExists';
 
-const ActivityCapture = ({ setActiveComponent, onClose }) => {
+/*
+  Manejamos 4 tipos de operaciones:
+  1.- insertar
+  2.- actualizar
+  3.- eliminar
+  4.- actividad adicional
+*/
+const ActivityCapture = ({ setActiveComponent, onClose, initialStep = 0, onEventInitialStep, provitionalFilterData }) => {
 
-    const [activeStep, setActiveStep] = useState(0);
+    const [activeStep, setActiveStep] = useState(initialStep);
 
     const { snackbarOptions, setSnackbarOptions, showMessage } = useSnackbarOption();
     const { handleCreate, datos, error } = useActivityCaptureCreate()
+
+    const { handleList: handleListActivityCapture, processedData: processedDataActivityCapture, error: errorActivityCapture } = useFilterActivityCaptureByWeekFarmArea()
+    const { handleList: handleListBudgetExists, processedData: processedDataBudgetExists, error: errorBudgetExists } = useBudgetExists()
+
     const didMount = useRef(null);
 
     const [modeUpdate, setModeUpdate] = useState(false)
@@ -48,19 +61,65 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
     };
 
     const [dataValue, setDataValue] = useState(initialData);
-    const [filterData, setFilterData] = useState(filterInitialData)
+    const [filterData, setFilterData] = useState(provitionalFilterData ?? filterInitialData)
     const [cleanData, setCleanData] = useState([]) // Dejamos la data lista para mandarla al back
     const [activityCaptureData, setActivityCaptureData] = useState([]);
+    const [secondStep, setSeconStep] = useState([])
+    const [isCaptureActivityClose, setIsCaptureActivityClose] = useState(false)
+
+    useEffect(() => {
+        if (!Object.values(filterData).some(value => value === null)) {
+            handleListActivityCapture(filterData.id_semana, filterData.id_finca, filterData.id_area) // Listamos las actividadas que se dieron de alta previamente
+            handleListBudgetExists(filterData.id_semana, filterData.id_finca, filterData.id_area) // Listamos el estado del presupuesto
+        }
+    }, [filterData])
+
+    useEffect(() => {
+        if (errorActivityCapture) {
+            showMessage("Hubo un error al consultar las actividades previamente asignadas", "error")
+            return
+        }
+
+        if (processedDataActivityCapture.body.length === 0) {
+            return
+        }
+
+        setActivityCaptureData(processedDataActivityCapture.body.map(element => ({
+            id: `${element.actividad.id}${element.trabajador.id}`,
+            trabajador: {
+                id: element.trabajador.id,
+                nombre: `${element.trabajador.nombre} ${element.trabajador.apellido_paterno} ${element.trabajador.apellido_materno}`
+            },
+            actividad: element.actividad,
+            cantidad_avance: element.avance,
+            fecha: element.fecha,
+            operacion: 0,
+            cns_actividad_trabajador: element.cns_actividad_trabajador,
+        })))
+    }, [processedDataActivityCapture, errorActivityCapture])
+
+    const [selectedUpdateElement, setSelectedUpdateElement] = useState(null)
+
+    useEffect(() => {
+        if (!modeUpdate) {
+            setSelectedUpdateElement(null)
+            return
+        }
+
+        setSelectedUpdateElement(dataValue)
+    }, [modeUpdate])
 
     useEffect(() => {
         if (!didMount.current) {
             didMount.current = true;
             return; // No ejecutar la lógica la primera vez
         }
+
         if (error) {
             showMessage("Ocurrio un error al crear el recurso", "error")
             return
         }
+
         if (datos?.data?.status) {
             showMessage("¡Registro creado con éxito!", "success")
             setTimeout(() => {
@@ -72,12 +131,19 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
     }, [datos, error])
 
     useEffect(() => {
-        if (modeUpdate)
-            return
+        if (modeUpdate) {
+            if (!selectedUpdateElement)
+                return
+
+            if (selectedUpdateElement.id === `${dataValue.id_actividad}${dataValue.id_trabajador}`)
+                return
+        }
 
         const isDuplicate = cleanData.find(element =>
             `${element.id_actividad}${element.id_trabajador}` === `${dataValue.id_actividad}${dataValue.id_trabajador}`
+            && element.operacion !== 3
         )
+
         if (isDuplicate) {
             showMessage("La actividad ya fue asignada al trabajador", "warning")
             setDataValue((element) => ({
@@ -98,12 +164,27 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
     }, [dataValue.cantidad_avance])
 
     useEffect(() => {
-        const data = activityCaptureData.map(data => ({
-            id_trabajador: data.trabajador.id,
-            id_actividad: data.actividad.id,
-            avance: `${data.cantidad_avance}%`,
-            fecha: data.fecha
-        }))
+        const data = activityCaptureData.map(data => {
+
+            const buildData = {
+                id_trabajador: data.trabajador.id,
+                id_actividad: data.actividad.id,
+                avance: Number(Number(data.cantidad_avance).toFixed(2)),
+                fecha: data.fecha,
+                operacion: data.operacion,
+                cns_actividad_trabajador: data?.cns_actividad_trabajador
+            }
+
+            if (data?.old_trabajador) {
+                return {
+                    ...buildData,
+                    nuevo_trabajador: data.trabajador.id,
+                    id_trabajador: data.old_trabajador
+                }
+            }
+
+            return buildData
+        })
 
         setCleanData(data)
     }, [activityCaptureData])
@@ -113,6 +194,9 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
     };
 
     const handleBack = () => {
+        if (activeStep === initialStep && onEventInitialStep) {
+            onEventInitialStep()
+        }
         setActiveStep((prev) => prev - 1);
     };
 
@@ -138,7 +222,7 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
     };
 
     const finallyValidation = () => {
-        handleCreate(cleanData, filterData.id_semana, filterData.id_finca, filterData.id_area)
+        handleCreate(cleanData, filterData.id_semana, filterData.id_finca, filterData.id_area, 21)
     };
 
     const saveValidation = () => {
@@ -149,6 +233,32 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
         setActiveStep(0);
         setActiveComponent('default'); //Logica de validacion para el paso Cancelar
     };
+
+    useEffect(() => {
+        if (errorBudgetExists) {
+            showMessage("Hubo un error con la consulta del estado de las actividades")
+            setActiveStep(0);
+            setActiveComponent('default')
+            return
+        }
+
+        if (processedDataBudgetExists.body) {
+
+            if (processedDataBudgetExists.body?.status?.id < 21) {
+                setSeconStep([
+                    <ButtonComponent
+                        rightIcon={<ArrowForwardIcon />}
+                        styleButton="contained"
+                        color="strongGreen"
+                        onClick={secondValidation}
+                        label='Siguiente'
+                    />
+                ])
+            } else if (processedDataBudgetExists.body?.status?.id >= 21) {
+                setIsCaptureActivityClose(true)
+            }
+        }
+    }, [processedDataBudgetExists, errorBudgetExists, activityCaptureData])
 
     const steps = [
         {
@@ -178,8 +288,10 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
         {
             component:
                 <Activity
+                    isCaptureActivityClose={isCaptureActivityClose}
                     dataValue={dataValue}
                     setDataValue={setDataValue}
+                    showMessage={showMessage}
                     filterData={filterData}
                     setActivityCaptureData={setActivityCaptureData}
                     modeUpdate={modeUpdate}
@@ -195,13 +307,7 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
                     onClick={handleBack}
                     label='Anterior'
                 />,
-                <ButtonComponent
-                    rightIcon={<ArrowForwardIcon />}
-                    styleButton="contained"
-                    color="strongGreen"
-                    onClick={secondValidation}
-                    label='Siguiente'
-                />
+                ...secondStep
             ],
         },
         {
@@ -248,24 +354,50 @@ const ActivityCapture = ({ setActiveComponent, onClose }) => {
     );
 }
 
-const Activity = ({ dataValue, setDataValue, filterData, setActivityCaptureData, activityCaptureData, modeUpdate, setModeUpdate }) => {
+const Activity = ({ dataValue, setDataValue, filterData, setActivityCaptureData, activityCaptureData, modeUpdate, setModeUpdate, isCaptureActivityClose, showMessage }) => {
 
     const handleEditRow = (row) => {
-        setModeUpdate(true)
+        if (isCaptureActivityClose) {
+            showMessage("Captura de actividades finalizada", "warning")
+            return
+        }
+
         setDataValue(({
-            //id: row.actividad.id, // Agregando el id como pivote para verificar
+            ...row,
+            id: `${row.actividad.id}${row.trabajador.id}`, // Agregando el id como pivote para verificar
             id_trabajador: row.trabajador.id,
             id_actividad: row.actividad.id,
             cantidad_avance: row.cantidad_avance,
             fecha: row.fecha
         }))
+        setModeUpdate(true)
     };
 
     const handleDeleteRow = (row) => {
-        // Recordemos que el id de la actividad es el id de la tabla por el modelo de negocio
-        setActivityCaptureData((prev) =>
-            prev.filter(activityCaputreData => `${activityCaputreData.actividad.id}${activityCaputreData.trabajador.id}` !== row.id)
-        )
+        if (isCaptureActivityClose) {
+            showMessage("Captura de actividades finalizada", "warning")
+            return
+        }
+
+        /*
+          Si la operacion es una inserción la eliminamos, 
+          si es un registro existente lo marcamos como eliminacion: 3
+        */
+        const transformDeleteData = activityCaptureData.map(element => {
+            if (element.id === row.id) {
+
+                if (element.operacion === 1)
+                    return null
+
+                return {
+                    ...element,
+                    operacion: 3
+                }
+            }
+            return element
+        })
+
+        setActivityCaptureData(transformDeleteData.filter(element => element !== null))
     };
 
     const tableHeaders = [
@@ -303,6 +435,7 @@ const Activity = ({ dataValue, setDataValue, filterData, setActivityCaptureData,
                         setModeUpdate={setModeUpdate}
                         filterData={filterData}
                         setActivityCaptureData={setActivityCaptureData}
+                        isCaptureActivityClose={isCaptureActivityClose}
                     />
                 }
                 queryTitle="Consulta de Semana"
@@ -312,14 +445,15 @@ const Activity = ({ dataValue, setDataValue, filterData, setActivityCaptureData,
                     <BasicTableComponent
                         information={{
                             header: tableHeaders,
-                            body: activityCaptureData.map((item) => ({
-                                ...item,
-                                // El id se forma de la actividad y trabajador.
-                                id: `${item.actividad.id}${item.trabajador.id}`,
-                                nombre_empleado: item.trabajador.nombre,
-                                nombre_actividad: item.actividad.nombre,
-                                cantidad_avance: item.cantidad_avance
-                            })),
+                            body: activityCaptureData
+                                .filter(element => element.operacion !== 3)
+                                .map((item) => ({
+                                    ...item,
+                                    id: item.id,
+                                    nombre_empleado: item.trabajador.nombre,
+                                    nombre_actividad: item.actividad.nombre,
+                                    cantidad_avance: item.cantidad_avance
+                                })),
                         }}
                         items={[
                             {

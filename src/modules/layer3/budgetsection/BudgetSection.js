@@ -44,20 +44,20 @@ const BudgetSection = ({BigButton, onClose}) => {
             </Typography>
             <Stack direction="row" sx={{ justifyContent: "center", gap: 7, paddingTop: "3px" }}>
             <BigButton
-                            label="Captura de Presupuesto"
-                            onClick={() => setActiveComponent('captureBudget')} // Cambia el estado al hacer clic
-                            icon={<AddIcon sx={{ color: 'white', fontSize: 100 }} />}
-                        />
-                        <BigButton
-                            label="Presupuestos Anteriores"
-                            onClick={() => setActiveComponent('previousBudgets')} // Cambia el estado al hacer clic
-                            icon={<AttachMoneyIcon sx={{ color: 'white', fontSize: 90 }} />}
-                        />
+                label="Captura de Presupuesto"
+                onClick={() => setActiveComponent('captureBudget')} // Cambia el estado al hacer clic
+                icon={<AddIcon sx={{ color: 'white', fontSize: 100 }} />}
+            />
+            <BigButton
+                label="Presupuestos Anteriores"
+                onClick={() => setActiveComponent('previousBudgets')} // Cambia el estado al hacer clic
+                icon={<AttachMoneyIcon sx={{ color: 'white', fontSize: 90 }} />}
+            />
             </Stack>
         </Stack>}
 
         {activeComponent === 'captureBudget' && (
-                <BudgetCapture setActiveComponent={setActiveComponent} dataTable={dataTable} setDataTable={setDataTable} initialData={initialData} dataValue={dataValue} setDataValue={setDataValue} activeStep={activeStep} setActiveStep={setActiveStep} isPastBudget={isPastBudget} setIsPastBudget={setIsPastBudget} onClose={onClose}/> // Renderiza el componente de captura de presupuesto
+                <BudgetCapture setActiveComponent={setActiveComponent} dataTable={dataTable} setDataTable={setDataTable} initialData={initialData} dataValue={dataValue} setDataValue={setDataValue} activeStep={activeStep} setActiveStep={setActiveStep} setIsPastBudget={setIsPastBudget} isPastBudget={isPastBudget} onClose={onClose}/> // Renderiza el componente de captura de presupuesto
         )}
 
         {activeComponent === 'previousBudgets' && (

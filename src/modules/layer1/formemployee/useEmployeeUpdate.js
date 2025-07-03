@@ -18,6 +18,10 @@ const useEmployeeUpdate = () => {
             direccion: data.direccion,
             celular: data.celular,
         };
+        if(data.id_puesto === 1){
+            console.log("Áreas que se van a enviar:", data.areas);
+            newData.areas = data.areas;
+        }
         console.log("Datos a enviar a la API:", newData);
         await obtenerDatos('POST', url, newData);
         console.log("Método: POST");

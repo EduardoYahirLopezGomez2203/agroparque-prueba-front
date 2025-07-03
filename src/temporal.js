@@ -26,13 +26,12 @@ const putEnviroment = (domain, ...moreEnviroments) => {
         API_URL_catch_week_create: domain + '/v1/semana/create',
         API_URL_catch_week_create_batch: domain + '/v1/semana/create/batch',
         API_URL_details_activity_create: domain + '/v1/finca/?/actividad/area/?/create',
-        API_URL_budget_create: domain + '/v1/presupuesto/update/detalle?',
+        API_URL_budget_create: domain + '/v1/presupuesto/create/detalle?',
         API_URL_update_budget_create_new_activity: domain + '/v1/presupuesto',
         API_URL_capture_activity_create: domain + '/v1/captura-actividad/semana/?/finca/?/area/?/create',
 
         API_URL_filter_management_activity: domain + '/v1/finca/?/area/?',
         API_URL_find_area_by_farm: domain + '/v1/area/list/finca/?',
-        API_URL_find_areas_by_manager: domain + '/v1/trabajador/?/areas-responsable',
 
         API_URL_catch_week_generate: domain + '/v1/semana/generate',
 
@@ -65,14 +64,12 @@ const putEnviroment = (domain, ...moreEnviroments) => {
         API_URL_budget_detail_by_week_farm_area: domain + '/v1/presupuesto/semana/?/finca/?/area/?/list',
         API_URL_budget_list: domain + '/v1/presupuesto/list',
         API_URL_activity_by_week_farm_area: domain + '/v1/actividad/presupuesto/semana/?/finca/?/area/?/list',
-        API_URL_activity_by_week_farm_area2: domain + '/v1/presupuesto/exists?',
         API_URL_current_year_budget_list: domain + '/v1/presupuesto/semana/list',
         API_URL_employee_by_company_list: domain + '/v1/trabajador/empresa/?',
         API_URL_activities_by_budget: domain + '/v1/presupuesto', //para obtener las actividades por presupuesto
         API_URL_archive_by_activity: domain + '/v1/documento-actividad/presupuesto',
         API_URL_archive_by_url_archive: domain,
         API_URL_capture_activity_by_week_farm_area_list: domain + '/v1/captura-actividad/semana/?/finca/?/area/?/list',
-        API_URL_budget_exists: domain + '/v1/presupuesto/exists',
 
         API_URL_activities_manager_list: domain + '/v1/finca/?/actividad/area/?/list',
 

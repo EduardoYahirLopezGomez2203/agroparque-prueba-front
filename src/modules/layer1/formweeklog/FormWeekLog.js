@@ -42,12 +42,10 @@ const FormWeekLog = () => {
     useEffect(() => {
         if (error) {
             data.alert("Ocurrió un error al actualizar", "error")
-
             return
         }
 
         if (datos) {
-
             data.alert("¡Registro actualizado correctamente!", "success")
 
             data.refreshTable()
@@ -211,6 +209,12 @@ const FormWeekLog = () => {
             ...data,
             updateData: null
         })
+        data.refreshTable()
+    }
+
+    const handleReset = () => {
+        resetForm()
+        data.refreshTable()
     }
 
     const handleGenerate = (event) => {
@@ -222,7 +226,7 @@ const FormWeekLog = () => {
         <>
             <AlertDialog
                 open={openDialog}
-                handleForm={resetForm}
+                handleForm={handleReset}
                 onClose={() => setOpenDialog(false)}
                 data={{
                     ...formData,
@@ -233,7 +237,7 @@ const FormWeekLog = () => {
             <BasicForm
                 buttons={<ButtonFormWeekLog isUpdate={modeUpdate} />}
                 handleSubmit={modeUpdate ? handleFormUpdate : handleGenerate}
-                handleReset={modeUpdate ? handleCancelUpdate : resetForm}
+                handleReset={modeUpdate ? handleCancelUpdate : handleReset}
             >
                 <SectionForm title="Configuración" direction="column"
                     icon={<SettingsIcon fontSize="large" color="slateBlue" />}

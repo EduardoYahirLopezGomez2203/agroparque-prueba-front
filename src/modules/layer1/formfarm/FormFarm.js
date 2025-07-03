@@ -21,30 +21,37 @@ const FormFarm = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpdate,
     const [isOpenModalAddArea, setIsOpenModalAddArea] = useState(false);
     const [areasSeleccionadas, setAreasSeleccionadas] = useState([]);
     const  { alertInfo, showAlert, closeAlert } = useSnackbarAlert();
+    const [resetModalAreas, setResetModalAreas] = useState(false);
+    const [areasTableData, setAreasTableData] = useState([]);
 
-    const handleSaveAreas = idsArray => {
-        console.log("Áreas seleccionadas:", idsArray);
-        setAreasSeleccionadas(idsArray);
-
-        if(isUpdate){
-            // Actualiza también dataValue:
-            setDataValue(prev => ({
-                ...prev,
-                areasSeleccionadas: idsArray
-            }));
-        }
+    const handleSaveAreas = (idsArray, tableData) => {
+    console.log("Áreas seleccionadas:", idsArray);
+    setAreasSeleccionadas(idsArray);
+    setAreasTableData(tableData); // Guardar la tabla completa
+    if (isUpdate) {
+        setDataValue(prev => ({
+        ...prev,
+        areasSeleccionadas: idsArray
+        }));
     }
+    };
 
     const onSubmitFarm = (farmData, isUpdate, handleUpdate) => {
         if(areasSeleccionadas.length === 0) {
             showAlert("Debe seleccionar al menos un área antes de enviar el formulario.", "warning");
             return;
         }
+
         const fullPayload = {
             ...farmData,
             areas: areasSeleccionadas
         };
-        console.log("Datos completos a enviar:", fullPayload);
+
+        if (dataValue.celular.length !== 10) {
+            showAlert("Recuerda que tu número debe tener 10 dígitos", "warning")
+            return
+        }
+
         handleCreate(fullPayload, isUpdate, handleUpdate);
     }
 
@@ -68,6 +75,11 @@ const FormFarm = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpdate,
     const resetForm = () => {
         setDataValue(data);
         setIsUpdate(false);
+        setAreasSeleccionadas([]);
+
+        //Señal para resetear el modal de áreas
+        setResetModalAreas(true);
+        setTimeout(() => setResetModalAreas(false), 0);
     };
 
     const [dataValue, setDataValue] = useState(data)
@@ -120,7 +132,6 @@ const FormFarm = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpdate,
         console.log("Cargando áreas para la finca:", updateData.id);
         }
     }, [isUpdate, updateData, loadAreasForFarm]);
-
 
     useEffect(() => {
     if (isUpdate) {
@@ -176,6 +187,7 @@ const FormFarm = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpdate,
                     ButtonComponent={ButtonComponent} 
                     dataArea={dataArea} 
                     saveAreas={handleSaveAreas}
+                    resetTrigger={resetModalAreas}
                 />}
             </FormTemporality>
             <Snackbar

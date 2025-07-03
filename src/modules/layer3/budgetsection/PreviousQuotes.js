@@ -68,20 +68,19 @@ const PreviousQuotes = ({setActiveComponent, setDataValue, setActiveStep, setIsP
       status_presupuesto: String(item.status.id_status),
       status: item.status.nombre_status,
       cns_detalle_presupuesto: item.presupuesto.cns_detalle_presupuesto,
-      // cns_detalle_actividad: item.detalle_actividad.cns_detalle_actividad,
-      // isPastBudget: true
+      cns_detalle_finca: item.finca.cns_detalle_finca
     }))
   };
 
   const handleClick = (row) => {
-
     setDataValue({
       id_semana: String(row.id_semana),
       id_empresa: String(row.id_empresa),
       id_finca: String(row.id_finca),
       id_area: String(row.id_area),
       id_presupuesto: String(row.id_presupuesto),
-      status_presupuesto: row.status_presupuesto
+      status_presupuesto: row.status_presupuesto,
+      cns_detalle_finca: row.cns_detalle_finca
     });
       setIsPastBudget(true);
       setActiveComponent('captureBudget');

@@ -32,7 +32,7 @@ const ActivitiesSection = ({ BigButton, onClose }) => {
         )}
 
         {activeComponent === 'previousWeeks' && (
-            <PreviousWeeks setActiveComponent={setActiveComponent} />
+            <PreviousWeeks setActiveComponent={setActiveComponent} onClose={onClose} />
         )}
     </>
     );

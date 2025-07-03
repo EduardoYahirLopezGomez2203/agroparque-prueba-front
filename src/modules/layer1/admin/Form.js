@@ -32,7 +32,7 @@ const Form = ({ children, direction = "row", spacing = 10, useFormApi, isAddInfo
             return;
         }
 
-        if (response && response.data && response.data.status) {
+        if (response?.data?.status) {
             setSnackbarMessage("¡Registro creado con éxito!");
             setSnackbarSeverity("success");
             setOpenSnackbar(true);
@@ -43,7 +43,7 @@ const Form = ({ children, direction = "row", spacing = 10, useFormApi, isAddInfo
             setSnackbarSeverity("error");
             setOpenSnackbar(true);
         }
-    }, [response]);
+    }, [response?.data]);
 
     useEffect(() => {
         if (isFirst.current) {
@@ -52,7 +52,7 @@ const Form = ({ children, direction = "row", spacing = 10, useFormApi, isAddInfo
         }
 
         console.log("responseUpdate:", responseUpdate);
-        if (responseUpdate && responseUpdate.data && responseUpdate.data.status) { // verificar re-enderizado
+        if (responseUpdate?.data?.status) { // verificar re-enderizado
             setSnackbarMessage("¡Registro actualizado correctamente!");
             setSnackbarSeverity("success");
             setOpenSnackbar(true);
@@ -63,7 +63,7 @@ const Form = ({ children, direction = "row", spacing = 10, useFormApi, isAddInfo
             setSnackbarSeverity("error");
             setOpenSnackbar(true);
         }
-    }, [responseUpdate]);
+    }, [responseUpdate?.data]);
 
     useEffect(() => {
         setUpdate(isUpdate)
@@ -84,7 +84,10 @@ const Form = ({ children, direction = "row", spacing = 10, useFormApi, isAddInfo
 
     const handleReset = () => {
         resetForm()
-        setUpdate(false)
+        if (update) {
+            setUpdate(false)
+        }
+        reload()
     }
 
     const openModal = () => {
@@ -158,6 +161,7 @@ export const InputForm = ({
     disabled,
     setDataValue, 
     fieldName,
+    onChangeCustom
 }) => {
     return (
         <Box sx={{ paddingTop: 2, flexGrow: 1 }}>
@@ -169,6 +173,7 @@ export const InputForm = ({
                 type={type}
                 setDataValue={setDataValue}
                 dataValue={dataValue} // <- Maneja valores undefined
+                onChangeCustom={onChangeCustom}
             />
         </Box>
     );
@@ -181,6 +186,7 @@ export const SelectForm = ({
     title,
     isRequired = false,
     options,
+    disabled,
     dataValue = {},
     setDataValue,
     fieldName,
@@ -190,6 +196,7 @@ export const SelectForm = ({
     return (
         <Box sx={{ paddingTop: 2, flexGrow: 1 }}>
             <SelectComponent
+                disabled={disabled}
                 title={title}
                 isRequired={isRequired}
                 options={options}
@@ -337,7 +344,7 @@ export const FormTemporality = ({ children, direction = "row", spacing = 10, use
             return;
         }
 
-        if (response && response.data && response.data.status) {
+        if (response?.data?.status) {
             setSnackbarMessage("¡Registro creado con éxito!");
             setSnackbarSeverity("success");
             setOpenSnackbar(true);
@@ -348,7 +355,7 @@ export const FormTemporality = ({ children, direction = "row", spacing = 10, use
             setSnackbarSeverity("error");
             setOpenSnackbar(true);
         }
-    }, [response]);
+    }, [response?.data]);
 
     useEffect(() => {
         if (isFirst.current) {
@@ -356,8 +363,7 @@ export const FormTemporality = ({ children, direction = "row", spacing = 10, use
             return;
         }
 
-        console.log("responseUpdate:", responseUpdate);
-        if (responseUpdate && responseUpdate.data && responseUpdate.data.status) { // verificar re-enderizado
+        if (responseUpdate?.data?.status) { // verificar re-enderizado
             setSnackbarMessage("¡Registro actualizado correctamente!");
             setSnackbarSeverity("success");
             setOpenSnackbar(true);
@@ -368,7 +374,7 @@ export const FormTemporality = ({ children, direction = "row", spacing = 10, use
             setSnackbarSeverity("error");
             setOpenSnackbar(true);
         }
-    }, [responseUpdate]);
+    }, [responseUpdate?.data]);
 
     useEffect(() => {
         setUpdate(isUpdate)
@@ -389,7 +395,10 @@ export const FormTemporality = ({ children, direction = "row", spacing = 10, use
 
     const handleReset = () => {
         resetForm()
-        setUpdate(false)
+        if (update) {
+            setUpdate(false)
+        }
+        reload()
     }
 
     const openModal = () => {

@@ -12,8 +12,34 @@ import Activity from "./Activity";
 import useFilterFarm from "../../layer1/formactivitymanager/useFilterFarm";
 import useManagerActivityCreate from "../../layer1/formactivitymanager/useManagerActivityCreate";
 import useSnackbarAlert from "../../layer1/formactivitymanager/useSnackbarAlert";
+import useActivitiesManagerList from "../../layer1/formactivitymanager/useActivitiesManagerList";
 
 const ActivityManager = ({ onClose }) => {
+
+    const { handleList: handleListActivities, processedData } = useActivitiesManagerList();
+    const [originalData, setOriginalData ] = useState();
+
+    // Procesamiento de datos para la tabla
+    useEffect(() => {
+        if(processedData.body.length > 0) {
+            console.log("Ya hay datos existentes! estos son 🫣:", processedData.body);
+            const tablaInicial = processedData.body.map(row => ({
+                id: row.id_actividad,
+                id_actividad: row.id_actividad,
+                nombre_actividad: row.nombre_actividad,
+                unidad_avance: row.unidad,
+                precio: row.precio,
+                cns_detalle_actividad: row.cns_detalle_actividad,
+                operacion: 0 
+            }));
+            setDataTable(tablaInicial)
+            setOriginalData(tablaInicial);
+        } else {
+            console.log("Es un registro nuevo! no hay datos 😁:", processedData.body);
+            setDataTable([]);
+            setOriginalData([]);
+        }
+    }, [processedData]);
     
     // Estados del stepper
     const [activeStep, setActiveStep] = useState(0);
@@ -49,17 +75,42 @@ const ActivityManager = ({ onClose }) => {
 
     // Guarda las actividades
     const saveValidation = () => {
-        
-        if (dataTable.length === 0) {
+
+        // Validar que haya al menos una actividad visible (no eliminada)
+        const visibles = dataTable.filter(r => r.operacion !== 3);
+
+        if (visibles.length === 0) {
             showAlert("Agrega al menos una actividad", "warning");
             return;
         }
+
         console.log("finca seleccionada:", dataFilter.id_finca);
         console.log("área seleccionada:", dataFilter.id_area);
-        const payload = dataTable.map(r => ({
+
+        const payload = dataTable
+        .filter(r => r.operacion !== 0)
+        .map(r => {
+        const base = {
             id_actividad: r.id_actividad,
-            precio:       Number(r.precio)
-        }));
+            precio: Number(r.precio),
+            operacion: r.operacion
+        };
+
+        if (r.operacion === 2 || r.operacion === 3) {
+            base.cns_detalle_actividad = r.cns_detalle_actividad;
+        }
+            return base;
+        });
+
+        // Si payload quedó vacío, no se debería guardar
+        if (payload.length === 0) {
+            showAlert("No hay cambios que guardar", "warning");
+            return;
+        }
+
+        console.log("DataTable actual ✅:", dataTable);
+        console.log("Payload final ✅:", payload);
+
         createActivities(
             dataFilter.id_finca,
             dataFilter.id_area,
@@ -96,6 +147,11 @@ const ActivityManager = ({ onClose }) => {
         // Se obtiene el detalle de la finca
         fetchDetalle(dataFilter.id_finca, dataFilter.id_area);
 
+        // Consoles nuevos agregados
+        console.log("Datos de finca obtenido 😱:", dataFilter.id_finca);
+        console.log("Datos de área obtenido 😱:", dataFilter.id_area);
+        handleListActivities(dataFilter.id_finca, dataFilter.id_area);
+
         handleNext();
     };
     const secondValidation = () => firstIsValid && handleNext();
@@ -130,6 +186,7 @@ const ActivityManager = ({ onClose }) => {
                     setDataValue={setDataValue} 
                     dataTable={dataTable}
                     setDataTable={setDataTable}
+                    originalData={originalData}
                 />
             ),
             label: "Captura",

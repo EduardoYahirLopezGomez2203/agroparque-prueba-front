@@ -16,6 +16,10 @@ import useEmployeeLabourList from "./useEmployeeLabourList";
 import useEmploymentList from "../formemployment/useEmploymentList";
 import AddManagerModal from "../../../components/modals/AddManagerModal";
 import useAreaFarmList from "./useAreaByFarmList";
+import { SelectFormWithOnChange } from "../../../components/selects/SelectFormWithOnChange";
+import useAreaByEmployeeList from "./useAreaByEmployeeList";
+import SnackbarComponent from "../../../components/snackbar/SnackbarComponent"
+import useSnackbarOptions from "../../../hooks/useSnackbarOption"
 
 const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpdate, responseUpdate }) => {
     const { handleCreate, datos } = useEmployeeCreate();
@@ -47,15 +51,41 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
 
     const { handleList: handleListArea, areas: availableAreas, cargando: cargandoAreas } = useAreaFarmList();
 
+    const { handleList: loadAreasForEmployee, areasEmpleado } = useAreaByEmployeeList();
+
+
     const [isOpenModal, setIsOpenModal] = useState(false);
     const [isOpenManagerModal, setIsOpenManagerModal] = useState(false);
     const [pendingPuesto, setPendingPuesto] = useState(null);
     const [areasSeleccionadas, setAreasSeleccionadas] = useState([]);
+    const [puestoSelectionCount, setPuestoSelectionCount] = useState(0);
+    const [puestoSeleccionado, setPuestoSeleccionado] = useState(null);
+    const [resetModalAreas, setResetModalAreas] = useState(false);
 
-    const handleSaveAreas = idsArray => {
+    useEffect(() => {
+    if (isUpdate && areasEmpleado.length > 0) {
+        const ids = areasEmpleado.map((area) => area.id);
+        console.log("IDs de áreas cargados del API:", ids);
+        setAreasSeleccionadas(ids);
+        setDataValue((prev) => ({
+        ...prev,
+        areas: ids
+        }));
+    }
+    }, [areasEmpleado, isUpdate]);
+
+    const handleSaveAreas = (idsArray) => {
     console.log("Áreas seleccionadas:", idsArray);
-    setAreasSeleccionadas(idsArray);
+    setDataValue(v => ({
+        ...v,
+        id_puesto: pendingPuesto,
+        areas: idsArray
+    }));
+    setPendingPuesto(null);
+    setIsOpenManagerModal(false);
     };
+
+    const { snackbarOptions, setSnackbarOptions, showMessage} = useSnackbarOptions() 
 
     const data = {
         id_tipo_trabajador: null,
@@ -70,10 +100,7 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
         archivos: []
     }
 
-    const data2 = { id: '', nombre: '', valor: '' };
-
     const [dataValue, setDataValue] = useState(data);
-    const [dataValue2, setDataValue2] = useState(data2);
 
     const fileInputRef = useRef(null); // Creamos una referencia para el input de archivos
 
@@ -83,27 +110,40 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
     // cuando la finca cambie en el formulario:
     useEffect(() => {
         if (dataValue.id_finca) {
-        handleListArea({ id_finca: dataValue.id_finca });
+            handleListArea({ id_finca: dataValue.id_finca });
         }
     }, [dataValue.id_finca, handleListArea]);
 
-    // Cuando detecta que se selecciona y abre modal
     useEffect(() => {
-    if (dataValue.id_puesto === jefeDeAreaId) {
-        setPendingPuesto(jefeDeAreaId);
-        setIsOpenManagerModal(true);
+    if (dataValue && dataValue.id_puesto != null) {
+        setPuestoSelectionCount(c => c + 1);
     }
-    }, [dataValue.id_puesto, jefeDeAreaId]);
+    }, [dataValue]);
+
+    useEffect(() => {
+        if (dataValue.id_puesto != null) {
+            setPuestoSeleccionado(dataValue.id_puesto);
+        }
+    }, [dataValue.id_puesto]);
 
     // Callback del modal
-    const handleManagerModalSave = selectedAreasIds => {
-    setDataValue(v => ({
+    const handleManagerModalSave = (selectedAreasIds) => {
+    setDataValue((v) => ({
         ...v,
         id_puesto: pendingPuesto,
-        areas: selectedAreasIds
+        areas: selectedAreasIds,
     }));
     setPendingPuesto(null);
     setIsOpenManagerModal(false);
+    };
+
+    const handleManagerModalClose = () => {
+    setIsOpenManagerModal(false);
+    setPendingPuesto(null);
+        setDataValue(v => ({
+            ...v,
+            id_puesto: null
+        }));
     };
 
     useEffect(() => {
@@ -124,17 +164,21 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
         handleListArea();
     }, [handleListArea]);
 
-    const handleEmploymentChange = e => {
+    const handleEmploymentChange = (e) => {
         const id = Number(e.target.value);
-        const opts = processedDataEmployment.body;
 
-        if (opts.length > 0 && id === opts[0].id) {
-        // se abre el modal en lugar de setear id_puesto
-        setPendingPuesto(id);
-        setIsOpenManagerModal(true);
+        // Si no es jefe de área, limpiamos las áreas
+        if (id !== jefeDeAreaId) {
+            setDataValue(v => ({
+            ...v,
+            id_puesto: id,
+            areas: [] 
+            }));
+            setAreasSeleccionadas([]); 
+            setResetModalAreas(true); 
+            setTimeout(() => setResetModalAreas(false), 0);
         } else {
-        // cualquier otra opción se guarda normal
-        setDataValue(v => ({ ...v, id_puesto: id }));
+            setDataValue(v => ({ ...v, id_puesto: id }));
         }
     };
 
@@ -152,13 +196,19 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
         }
     }, [selectedItem, processedData.body]);
 
-    const onSubmitEmployee = () => {
+    const onSubmitEmployee = (dataValue, isUpdate, handleUpdate) => {
         const payload = {
             ...dataValue,
-            areas: dataValue.areas || []
+            id_puesto: puestoSeleccionado,
         };
+
+        if (dataValue.celular.length !== 10) {
+            showMessage("Recuerda que tu número debe tener 10 dígitos", "warning")
+            return
+        }
+        
         console.log("Payload final empleado:", payload);
-        handleCreate(payload);
+        handleCreate(payload, isUpdate, handleUpdate);
     };
 
     const selectedFileType = () => {
@@ -250,10 +300,17 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
         setIsUpdate(false);
         setFileDetails([]);
         setDeletedFiles([]);
+        setAreasSeleccionadas([]);
+        setPuestoSeleccionado(null);
+        setPendingPuesto(null);
+
+        // Señal para borrar en el modal de áreas
+        setResetModalAreas(true);
+        setTimeout(() => setResetModalAreas(false), 0);
     };
 
     useEffect(() => {
-        if (isUpdate) {
+        if (isUpdate && updateData.id) {
             setDataValue((prevState) => ({
                 ...prevState,
                 id_tipo_trabajador: updateData.id_tipo_trabajador ?? prevState.id_tipo_trabajador,
@@ -265,8 +322,11 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
                 ap_materno: updateData.ap_materno ?? prevState.ap_materno,
                 direccion: updateData.direccion ?? prevState.direccion,
                 celular: updateData.celular ?? prevState.celular,
-                archivos: updateData.archivos ?? prevState.archivos
+                archivos: updateData.archivos ?? prevState.archivos,
+                areas: dataValue.areas || []
             }));
+            
+                loadAreasForEmployee({ idEmpleado: updateData.id });
             if (updateData.archivos) {
                 setFileDetails(updateData.archivos.map(archivo => ({
                     name: archivo.archivo,
@@ -277,8 +337,14 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
             // Obtener documentos del trabajador
             fetchEmployeeDocuments(updateData.id);
         }
-    }, [isUpdate, updateData, fetchEmployeeDocuments]);
+    }, [isUpdate, updateData, fetchEmployeeDocuments, loadAreasForEmployee]);
 
+    useEffect(() => {
+    if (isUpdate && areasEmpleado.length > 0) {
+        const ids = areasEmpleado.map((area) => area.id);
+        setAreasSeleccionadas(ids);
+    }
+    }, [areasEmpleado, isUpdate]);
 
     useEffect(() => {
         if (documents.length > 0) {
@@ -306,6 +372,7 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
             direccion: dataValue.direccion,
             celular: dataValue.celular,
             archivos: dataValue.archivos,
+            areas: dataValue.areas || [],
             existingFiles: prevArchivos,
             newFiles: dataValue.archivos.filter(file => !prevArchivos.includes(file)),
             deletedFiles: deletedFiles
@@ -325,7 +392,7 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
     };
 
     useEffect(() => {
-    console.log("Estado dataValue tras elegir áreas:", dataValue);
+        console.log("Estado dataValue tras elegir áreas:", dataValue);
     }, [dataValue.areas]);
 
     const dataLabour = processedDataLabour.body.map(body => {
@@ -350,118 +417,121 @@ const FormEmployee = ({ updateData, setUpdateData, isUpdate, setIsUpdate, setUpd
 
     return (
         <>
-        <Form useFormApi={() => ({ ...formApi })} isAddInformation={true} setIsOpenModal={setIsOpenModal}>
-            <SectionForm title="Personales"
-                icon={<PersonRoundedIcon sx={{ fontSize: "45px" }} color="slateBlue" />}
-            >
-                <InputForm title="Nombre" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="nombre" />
-                <InputForm title="Apellido Paterno" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="ap_paterno" />
-                <InputForm title="Apellido Materno" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="ap_materno" />
-            </SectionForm>
+            <Form useFormApi={() => ({ ...formApi })} isAddInformation={true} setIsOpenModal={setIsOpenModal}>
+                <SectionForm title="Personales"
+                    icon={<PersonRoundedIcon sx={{ fontSize: "45px" }} color="slateBlue" />}
+                >
+                    <InputForm title="Nombre" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="nombre" />
+                    <InputForm title="Apellido Paterno" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="ap_paterno" />
+                    <InputForm title="Apellido Materno" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="ap_materno" />
+                </SectionForm>
 
-            <SectionForm title="Área"
-                icon={<CasesRoundedIcon sx={{ fontSize: "45px" }} color="slateBlue" />}
-            >
-                <SelectForm
-                    title="Tipo de Trabajador (Seleccione una opción)"
-                    isRequired
-                    options={optionsE}
-                    dataValue={dataValue}
-                    setDataValue={setDataValue}
-                    fieldName="id_tipo_trabajador"
-                />
-                <SelectForm
-                    title="Finca (Seleccione una opción)"
-                    isRequired
-                    options={optionsF}
-                    dataValue={dataValue}
-                    setDataValue={setDataValue}
-                    fieldName="id_finca"
-                />
-
-                <div style={{ display: "flex", gap: "1rem" }}>
-                <SelectForm
-                title="Puesto"
-                options={processedDataEmployment.body.map(o => ({ id: o.id, nombre: o.nombre }))}
-                dataValue={dataValue}
-                setDataValue={setDataValue} 
-                onChange={e => {
-                    const id = +e.target.value;
-                    if (id === jefeDeAreaId) {
-                    setPendingPuesto(id);
-                    setIsOpenManagerModal(true);
-                    } else {
-                    setDataValue(v => ({ ...v, id_puesto: id }));
-                    }
-                }}
-                fieldName="id_puesto"
-                />
+                <SectionForm title="Área"
+                    icon={<CasesRoundedIcon sx={{ fontSize: "45px" }} color="slateBlue" />}
+                >
                     <SelectForm
-                        title="Labor"
+                        title="Tipo de Trabajador (Seleccione una opción)"
                         isRequired
-                        options={dataLabour}
+                        options={optionsE}
                         dataValue={dataValue}
                         setDataValue={setDataValue}
-                        fieldName="id_labor_trabajador"
+                        fieldName="id_tipo_trabajador"
                     />
-                </div>
+                    <SelectForm
+                        title="Finca (Seleccione una opción)"
+                        isRequired
+                        options={optionsF}
+                        dataValue={dataValue}
+                        setDataValue={setDataValue}
+                        fieldName="id_finca"
+                    />
 
-            </SectionForm>
-            <SectionForm title="Contacto"
-                icon={<PhoneRoundedIcon sx={{ fontSize: "45px" }} color="slateBlue" />}
-            >
-                <InputForm title="Número de Télefono" isRequired type="number" setDataValue={setDataValue} dataValue={dataValue} fieldName="celular" />
-                <InputForm title="Dirección" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="direccion" />
+                    <div style={{ display: "flex", gap: "1rem" }}>
+                        <SelectFormWithOnChange
+                        title="Puesto"
+                        isRequired
+                        options={processedDataEmployment.body.map(o => ({ id: o.id, nombre: o.nombre }))}
+                        value={dataValue.id_puesto}
+                        onChange={handleEmploymentChange}
+                        disabled={!dataValue.id_finca}
+                        fieldName="id_puesto"
+                        onJefeClick={() => {
+                            setPendingPuesto(jefeDeAreaId);
+                            setIsOpenManagerModal(true);
+                        }}
+                        />
 
-                {/* Input de tipo file oculto, solo se activa al hacer clic en el botón */}
-                <input
-                    type="file"
-                    ref={fileInputRef} // Asignamos la referencia para poder activarlo con código
-                    style={{ display: "none" }} // Lo ocultamos visualmente
-                    accept=".pdf,.jpg,.gif,.webp,.txt,.png"
-                    onChange={handleFileChange} // Detecta cuando se selecciona un archivo
+                        <SelectForm
+                            title="Labor"
+                            isRequired
+                            options={dataLabour}
+                            dataValue={dataValue}
+                            setDataValue={setDataValue}
+                            fieldName="id_labor_trabajador"
+                        />
+                    </div>
+
+                </SectionForm>
+                <SectionForm title="Contacto"
+                    icon={<PhoneRoundedIcon sx={{ fontSize: "45px" }} color="slateBlue" />}
+                >
+                    <InputForm title="Número de Télefono" isRequired type="number" setDataValue={setDataValue} dataValue={dataValue} fieldName="celular" />
+                    <InputForm title="Dirección" isRequired setDataValue={setDataValue} dataValue={dataValue} fieldName="direccion" />
+
+                    {/* Input de tipo file oculto, solo se activa al hacer clic en el botón */}
+                    <input
+                        type="file"
+                        ref={fileInputRef} // Asignamos la referencia para poder activarlo con código
+                        style={{ display: "none" }} // Lo ocultamos visualmente
+                        accept=".pdf,.jpg,.gif,.webp,.txt,.png"
+                        onChange={handleFileChange} // Detecta cuando se selecciona un archivo
+                    />
+
+                    {/* Botón que abre la ventana para seleccionar archivos */}
+                    <ButtonForm
+                        title="Añadir Archivos"
+                        icon={<NoteAddRoundedIcon />}
+                        color={dataValue.archivos.length > 0 ? "green" : "skyBlue"}  // Cambia el color según si hay archivos seleccionados
+                        onClick={handleFileSelect} // Llama a la función para abrir el selector de archivos
+                    />
+
+                    <RadioButtonView
+                        title="Tipos de documentos"
+                        isOpen={isSelectedFileType}
+                        onClose={unSelectedFileType}
+                        items={processedData.body}  // Pasamos los objetos completos, no solo el nombre
+                        selectedItem={selectedItem}
+                        onSelect={setSelectedItem}  // La función que actualiza el documento seleccionado
+                    />
+
+                    <FileModal
+                        isOpen={isArchivo}
+                        onCloseWithAnyChanges={handleFileUnSelectWithAnyChanges}
+                        onClose={handleFileUnSelect}
+                        onSelectFile={selectFile}
+                        selectedFileType={selectedFileType}
+                        selectType={selectedType}
+                        archivos={dataValue.archivos} // Pasamos los archivos seleccionados al modal
+                        removeFile={removeFile} // Pasamos la función para eliminar archivos
+                        selectedItemName={selectedItemName} // Pasamos el nombre del tipo de documento seleccionado
+                        fileDetails={fileDetails} // Pasamos los detalles de los archivos al modal
+                        SectionForm={SectionForm}
+                    />
+                    {<AddInformationModal open={isOpenModal} setIsOpenModal={setIsOpenModal} SectionForm={SectionForm} data={dataAddInformation} />}
+                </SectionForm>
+            </Form>
+                <AddManagerModal
+                    open={isOpenManagerModal}
+                    setIsOpenModal={setIsOpenManagerModal}
+                    dataArea={availableAreas}
+                    saveAreas={handleManagerModalSave}
+                    onCloseCustom={handleManagerModalClose}
+                    isEditing={isUpdate}
+                    initialSelectedIds={areasSeleccionadas}
+                    resetTrigger={resetModalAreas} 
                 />
-
-                {/* Botón que abre la ventana para seleccionar archivos */}
-                <ButtonForm
-                    title="Añadir Archivos"
-                    icon={<NoteAddRoundedIcon />}
-                    color={dataValue.archivos.length > 0 ? "green" : "skyBlue"}  // Cambia el color según si hay archivos seleccionados
-                    onClick={handleFileSelect} // Llama a la función para abrir el selector de archivos
-                />
-
-                <RadioButtonView
-                    title="Tipos de documentos"
-                    isOpen={isSelectedFileType}
-                    onClose={unSelectedFileType}
-                    items={processedData.body}  // Pasamos los objetos completos, no solo el nombre
-                    selectedItem={selectedItem}
-                    onSelect={setSelectedItem}  // La función que actualiza el documento seleccionado
-                />
-
-                <FileModal
-                    isOpen={isArchivo}
-                    onCloseWithAnyChanges={handleFileUnSelectWithAnyChanges}
-                    onClose={handleFileUnSelect}
-                    onSelectFile={selectFile}
-                    selectedFileType={selectedFileType}
-                    selectType={selectedType}
-                    archivos={dataValue.archivos} // Pasamos los archivos seleccionados al modal
-                    removeFile={removeFile} // Pasamos la función para eliminar archivos
-                    selectedItemName={selectedItemName} // Pasamos el nombre del tipo de documento seleccionado
-                    fileDetails={fileDetails} // Pasamos los detalles de los archivos al modal
-                    SectionForm={SectionForm}
-                />
-                {<AddInformationModal open={isOpenModal} setIsOpenModal={setIsOpenModal} SectionForm={SectionForm} data={dataAddInformation} />}
-            </SectionForm>
-        </Form>
-        <AddManagerModal
-            open={isOpenManagerModal}
-            setIsOpenModal={setIsOpenManagerModal}
-            dataArea={availableAreas}         
-            saveAreas={handleManagerModalSave}
-        />
-    </>
+            <SnackbarComponent snackbarOptions={snackbarOptions} setSnackbarOptions={setSnackbarOptions} />
+        </>
     );
 };
 

@@ -32,7 +32,7 @@ const PastBudgetModal = ({ isOpen, setIsPastBudgetModalOpen, dataSecondary, setD
           text: 'Actividad' , 
           icon: <DescriptionIcon fontSize="large" color="slateBlue"/>
         },
-        { id: 'precio', 
+        { id: 'precio_pasado', 
           text: 'Precio', 
           icon: <ArtTrackIcon fontSize='large' color='slateBlue'/> 
         },
@@ -63,7 +63,7 @@ const PastBudgetModal = ({ isOpen, setIsPastBudgetModalOpen, dataSecondary, setD
         }));
         onClose();
       } else {
-        showAlert("No se pudo cargar, ya que existe una o más actividades en la tabla.", "warning");
+        showAlert("No se pudo cargar, ya que existe una o más actividades iguales en la tabla de presupuesto capturado.", "warning");
       }
     }
   }

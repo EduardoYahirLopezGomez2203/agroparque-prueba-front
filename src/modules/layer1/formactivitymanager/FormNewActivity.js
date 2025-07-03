@@ -10,14 +10,18 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import useSnackbarAlert from "./useSnackbarAlert";
 
-const FormNewActivity = ({ dataValue, setDataValue, onAdd, isEditing, editId, onCancelEditing }) => {
+const FormNewActivity = ({ dataValue, setDataValue, onAdd, isEditing, editId, onCancelEditing, originalData }) => {
 
     const { handleList: handleListActivity, processedData: processedDataActivity } = useActivityList();
     const { alertInfo, closeAlert, showAlert } = useSnackbarAlert();
     const [precioError, setPrecioError] = useState("");
 
+    const isOriginalRecord = isEditing && originalData.some(o => Number(o.id_actividad) === Number(editId));
+
     // Catálogo de actividades
-    useEffect(() => { handleListActivity(); }, [handleListActivity]);
+    useEffect(() => { 
+        handleListActivity(); 
+    }, [handleListActivity]);
 
     // Mostrar unidad de avance al seleccionar actividad
     useEffect(() => {
@@ -26,7 +30,7 @@ const FormNewActivity = ({ dataValue, setDataValue, onAdd, isEditing, editId, on
         
         if (sel) setDataValue(prev => ({
             ...prev,
-            cantidad_avance: sel.nombre_unidad_avance || ""
+            cantidad_avance: sel.medicion || ""
         }));
     }, [dataValue.id_actividad, processedDataActivity.body, setDataValue]);
 
@@ -69,6 +73,7 @@ const FormNewActivity = ({ dataValue, setDataValue, onAdd, isEditing, editId, on
 
             <Stack width="100%" gap={2}>
                 <SectionForm title="Registro de Actividad" direction="row" icon={<GrassIcon />}>
+                <div style={{ position: "relative", display: "inline-block", width: "30%" }}>
                 <SelectForm
                     title="Actividad"
                     setDataValue={setDataValue}
@@ -78,11 +83,27 @@ const FormNewActivity = ({ dataValue, setDataValue, onAdd, isEditing, editId, on
                     options={opciones}
                     value={dataValue.id_actividad ?? ""}
                     onChange={e => {
-                        const id = parseInt(e.target.value, 10);
-                        console.log("🔀 Seleccionaste actividad ID:", id);
-                        setDataValue(prev => ({ ...prev, id_actividad: id }));
+                    const id = parseInt(e.target.value, 10);
+                    console.log("🔀 Seleccionaste actividad ID:", id);
+                    setDataValue(prev => ({ ...prev, id_actividad: id }));
                     }}
                 />
+                {isOriginalRecord && (
+                    <div
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        cursor: "not-allowed",
+                        backgroundColor: "rgba(255,255,255,0.4)",
+                        zIndex: 10,
+                    }}
+                    />
+                )}
+                </div>
+
                 <InputForm
                     title="Unidad"
                     isRequired
@@ -102,26 +123,6 @@ const FormNewActivity = ({ dataValue, setDataValue, onAdd, isEditing, editId, on
                     error={!!precioError}
                     helperText={precioError}
                     inputProps={{ inputMode: 'decimal' }}
-                    onKeyDown={e => {
-                    // permitimos sólo dígitos, punto, y teclas de control
-                    if (!/[0-9.]|\b/.test(e.key) && e.key.length === 1) {
-                        e.preventDefault();
-                        setPrecioError("Sólo se admiten números y punto.");
-                    }
-                    }}
-                    onChange={e => {
-                    const val = e.target.value;
-                    // regex: sólo dígitos y opcionalmente punto con hasta 2 decimales
-                    if (/^\d*(\.\d{0,2})?$/.test(val)) {
-                        setPrecioError("");
-                        setDataValue(prev => ({
-                        ...prev,
-                        precio: val === "" ? "" : parseFloat(val)
-                        }));
-                    } else {
-                        setPrecioError("Sólo dos decimales permitidos.");
-                    }
-                    }}
                 />
                 </SectionForm>
             </Stack>
@@ -138,14 +139,22 @@ const FormNewActivity = ({ dataValue, setDataValue, onAdd, isEditing, editId, on
                 </Snackbar>
         </>
     );
-    };
+};
 
 const ButtonFormNewActivity = ({ dataValue, onAdd, handleReset, opciones, isEditing, onCancelEditing, showAlert  }) => {
 
-    // Validación para el precio
+    // Validaciones antes de agregar
     const canSubmit = () => {
+        if (!dataValue.id_actividad || Number.isNaN(Number(dataValue.id_actividad))) {
+            showAlert("Selecciona una actividad antes de añadir.", "warning");
+            return false;
+        }
         if (dataValue.precio === "" || isNaN(Number(dataValue.precio))) {
             showAlert("Ingresa un precio válido antes de añadir.", "warning");
+            return false;
+        }
+        if (Number(dataValue.precio) <= 0) {
+            showAlert("El precio debe ser mayor que cero.", "warning");
             return false;
         }
         return true;
